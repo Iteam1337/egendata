@@ -284,7 +284,7 @@ const Index = () => {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="border-b border-border bg-white sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <div className="w-6 h-6 bg-white rounded-sm" style={{ 
@@ -299,9 +299,104 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-3xl mx-auto px-6 py-12">
-        <StepIndicator steps={steps} currentStep={step} />
+      {/* Main Content - Two Column Layout */}
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className={step >= 2 ? "grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8" : ""}>
+          
+          {/* Sidebar - Actor Cards (visible from step 2) */}
+          {step >= 2 && (
+            <aside className="space-y-6">
+              <div className="sticky top-24 space-y-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Aktörer</h3>
+                
+                {/* Alice Compact */}
+                <ActorCard name="Alice" role="Data Owner" status="active">
+                  <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
+                    📖 Läs
+                  </Button>
+                  {aliceDecrypted && (
+                    <div className="mt-2 p-2 bg-success/10 border border-success/30 rounded text-xs text-success">
+                      ✓ Dekryptering lyckades
+                    </div>
+                  )}
+                </ActorCard>
+
+                {/* Bob Compact */}
+                <ActorCard name="Bob" role="Recipient" status={bobRevoked ? "revoked" : (bobDecrypted ? "success" : "default")}>
+                  <div className="space-y-2">
+                    <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
+                      📖 Läs
+                    </Button>
+                    
+                    {!bobRevoked ? (
+                      <Button onClick={handleRevokeBob} variant="destructive" size="sm" className="w-full">
+                        🚫 Återkalla
+                      </Button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button onClick={handleGenerateBobQR} variant="outline" size="sm" className="flex-1">
+                          <QrCode className="w-3 h-3" />
+                        </Button>
+                        <Button onClick={() => { setScanningFor('Bob'); setShowScanner(true); }} variant="default" size="sm" className="flex-1">
+                          <ScanLine className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {bobDecrypted && !bobRevoked && (
+                      <div className="p-2 bg-success/10 border border-success/30 rounded text-xs text-success">
+                        ✓ Dekryptering lyckades
+                      </div>
+                    )}
+                    {bobRevoked && (
+                      <div className="p-2 bg-destructive/10 border border-destructive/30 rounded text-xs text-destructive">
+                        ✗ Åtkomst återkallad
+                      </div>
+                    )}
+                  </div>
+                </ActorCard>
+
+                {/* Charlie Compact */}
+                <ActorCard name="Charlie" role="Recipient" status={charlieRevoked ? "revoked" : (charlieDecrypted ? "success" : "default")}>
+                  <div className="space-y-2">
+                    <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
+                      📖 Läs
+                    </Button>
+                    
+                    {!charlieRevoked ? (
+                      <Button onClick={handleRevokeCharlie} variant="destructive" size="sm" className="w-full">
+                        🚫 Återkalla
+                      </Button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button onClick={handleGenerateCharlieQR} variant="outline" size="sm" className="flex-1">
+                          <QrCode className="w-3 h-3" />
+                        </Button>
+                        <Button onClick={() => { setScanningFor('Charlie'); setShowScanner(true); }} variant="default" size="sm" className="flex-1">
+                          <ScanLine className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {charlieDecrypted && !charlieRevoked && (
+                      <div className="p-2 bg-success/10 border border-success/30 rounded text-xs text-success">
+                        ✓ Dekryptering lyckades
+                      </div>
+                    )}
+                    {charlieRevoked && (
+                      <div className="p-2 bg-destructive/10 border border-destructive/30 rounded text-xs text-destructive">
+                        ✗ Åtkomst återkallad
+                      </div>
+                    )}
+                  </div>
+                </ActorCard>
+              </div>
+            </aside>
+          )}
+
+          {/* Main Content Area */}
+          <main className="space-y-8">
+            <StepIndicator steps={steps} currentStep={step} />
 
         {/* Step 0: Introduction & Key Generation */}
         {step === 0 && (
@@ -389,219 +484,150 @@ const Index = () => {
           </div>
         )}
 
-        {/* Step 2: Interactive Testing */}
+        {/* Step 2: Interactive Testing - Scenario in Center */}
         {step >= 2 && (
           <div className="animate-fade-in space-y-8">
             <div className="space-y-4">
               <h2 className="text-4xl font-bold">Testa åtkomstkontroll</h2>
               <p className="text-lg text-muted-foreground">
-                Nu kan du fritt testa att läsa data, återkalla och återge åtkomst. Alla aktörer har sina egna läsknappar.
+                Nu kan du fritt testa att läsa data, återkalla och återge åtkomst. Alla aktörer har sina egna läsknappar i sidopanelen.
               </p>
             </div>
 
+            {/* Scenario Walkthrough */}
+            <Card className="p-8 bg-muted/30">
+              <h3 className="text-2xl font-semibold mb-6">Scenariobeskrivning</h3>
+              
+              <div className="space-y-6">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-semibold">
+                    1
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Initial åtkomst</h4>
+                    <p className="text-muted-foreground">
+                      Alice har krypterat känslig data och delat åtkomst med Bob och Charlie. 
+                      Testa att läsa datan som de olika aktörerna genom att klicka på "📖 Läs" i sidopanelen.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-semibold">
+                    2
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Återkalla åtkomst</h4>
+                    <p className="text-muted-foreground">
+                      Alice kan när som helst återkalla åtkomst för Bob eller Charlie genom att klicka på "🚫 Återkalla". 
+                      Testa att återkalla Bobs åtkomst och försök sedan läsa datan som Bob igen.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-semibold">
+                    3
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Dela QR-kod</h4>
+                    <p className="text-muted-foreground">
+                      När åtkomst är återkallad kan Bob eller Charlie generera en QR-kod med sin publika nyckel genom att klicka på QR-ikonen.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-semibold">
+                    4
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Återge åtkomst via QR</h4>
+                    <p className="text-muted-foreground">
+                      Alice kan scanna QR-koden (klicka på skannings-ikonen) för att återge åtkomst. 
+                      Efter att ha scannat kan Bob eller Charlie läsa datan igen.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Data Display Area */}
             <div className="space-y-6">
-              {/* Alice */}
-              <ActorCard name="Alice" role="Data Owner" status="active" align="left">
-                <div className="space-y-4">
-                  <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
-                    📖 Läs som Alice
-                  </Button>
-                  {aliceDecrypted && (
-                    <DataDisplay
-                      title="Alice läser sin egen data"
-                      data={JSON.stringify(aliceDecrypted, null, 2)}
-                      variant="decrypted"
-                    />
-                  )}
-                </div>
-              </ActorCard>
-
-              {/* Bob */}
-              <ActorCard name="Bob" role="Recipient" status={bobRevoked ? "revoked" : (bobDecrypted ? "success" : "default")} align="right">
-                <div className="space-y-4">
-                  <Button 
-                    onClick={handleReadAsBob} 
-                    variant="default"
-                    size="sm" 
-                    className="w-full"
-                  >
-                    📖 Läs som Bob
-                  </Button>
-                  
-                  <div className="flex gap-2">
-                    {!bobRevoked ? (
-                      <Button 
-                        onClick={handleRevokeBob} 
-                        variant="destructive" 
-                        size="sm" 
-                        className="flex-1"
-                      >
-                        🚫 Återkalla
+              {/* Show QR Display if active */}
+              {showBobQR && (
+                <Card className="p-6 bg-primary/5 border-primary">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold">Bobs QR-kod</h3>
+                      <Button onClick={() => setShowBobQR(false)} variant="ghost" size="sm">
+                        Stäng
                       </Button>
-                    ) : (
-                      <>
-                        <Button 
-                          onClick={handleGenerateBobQR} 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex-1"
-                        >
-                          <QrCode className="w-4 h-4 mr-2" />
-                          QR-kod
-                        </Button>
-                        <Button 
-                          onClick={() => {
-                            setScanningFor('Bob');
-                            setShowScanner(true);
-                          }} 
-                          variant="default"
-                          size="sm" 
-                          className="flex-1"
-                        >
-                          <ScanLine className="w-4 h-4 mr-2" />
-                          Återge
-                        </Button>
-                      </>
-                    )}
+                    </div>
+                    <QRKeyDisplay qrData={bobQRData} userName="Bob" publicKeyJWK={bob!.publicKeyJWK} />
                   </div>
+                </Card>
+              )}
 
-                  {bobRevoked && !showBobQR && !(showScanner && scanningFor === 'Bob') && (
-                    <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
-                      <p className="text-sm text-destructive font-medium">
-                        ✗ Åtkomst återkallad
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Dela QR-kod och scanna för att återge
-                      </p>
-                    </div>
-                  )}
-
-                  {showBobQR && (
-                    <div className="space-y-2">
-                      <QRKeyDisplay qrData={bobQRData} userName="Bob" publicKeyJWK={bob!.publicKeyJWK} />
-                      <Button 
-                        onClick={() => setShowBobQR(false)} 
-                        variant="ghost" 
-                        size="sm" 
-                        className="w-full"
-                      >
-                        Stäng QR
+              {showCharlieQR && (
+                <Card className="p-6 bg-primary/5 border-primary">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold">Charlies QR-kod</h3>
+                      <Button onClick={() => setShowCharlieQR(false)} variant="ghost" size="sm">
+                        Stäng
                       </Button>
                     </div>
-                  )}
-                  
-                  {showScanner && scanningFor === 'Bob' && (
-                    <div className="space-y-2">
-                      <QRKeyScanner 
-                        onScan={handleScanQR}
-                        onClose={() => {
-                          setShowScanner(false);
-                          setScanningFor(null);
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {bobDecrypted && (
-                    <DataDisplay
-                      title="Bob läser data"
-                      data={JSON.stringify(bobDecrypted, null, 2)}
-                      variant="decrypted"
-                    />
-                  )}
-                </div>
-              </ActorCard>
-
-              {/* Charlie */}
-              <ActorCard name="Charlie" role="Recipient" status={charlieRevoked ? "revoked" : (charlieDecrypted ? "success" : "default")} align="left">
-                <div className="space-y-4">
-                  <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
-                    📖 Läs som Charlie
-                  </Button>
-                  
-                  <div className="flex gap-2">
-                    {!charlieRevoked ? (
-                      <Button 
-                        onClick={handleRevokeCharlie} 
-                        variant="destructive" 
-                        size="sm" 
-                        className="flex-1"
-                      >
-                        🚫 Återkalla
-                      </Button>
-                    ) : (
-                      <>
-                        <Button 
-                          onClick={handleGenerateCharlieQR} 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex-1"
-                        >
-                          <QrCode className="w-4 h-4 mr-2" />
-                          QR-kod
-                        </Button>
-                        <Button 
-                          onClick={() => {
-                            setScanningFor('Charlie');
-                            setShowScanner(true);
-                          }} 
-                          variant="default"
-                          size="sm" 
-                          className="flex-1"
-                        >
-                          <ScanLine className="w-4 h-4 mr-2" />
-                          Återge
-                        </Button>
-                      </>
-                    )}
+                    <QRKeyDisplay qrData={charlieQRData} userName="Charlie" publicKeyJWK={charlie!.publicKeyJWK} />
                   </div>
+                </Card>
+              )}
 
-                  {charlieRevoked && !showCharlieQR && !(showScanner && scanningFor === 'Charlie') && (
-                    <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
-                      <p className="text-sm text-destructive font-medium">
-                        ✗ Åtkomst återkallad
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Dela QR-kod och scanna för att återge
-                      </p>
-                    </div>
-                  )}
-
-                  {showCharlieQR && (
-                    <div className="space-y-2">
-                      <QRKeyDisplay qrData={charlieQRData} userName="Charlie" publicKeyJWK={charlie!.publicKeyJWK} />
-                      <Button 
-                        onClick={() => setShowCharlieQR(false)} 
-                        variant="ghost" 
-                        size="sm" 
-                        className="w-full"
-                      >
-                        Stäng QR
+              {/* Show Scanner if active */}
+              {showScanner && scanningFor && (
+                <Card className="p-6 bg-primary/5 border-primary">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold">Scanna {scanningFor}s QR-kod</h3>
+                      <Button onClick={() => { setShowScanner(false); setScanningFor(null); }} variant="ghost" size="sm">
+                        Stäng
                       </Button>
                     </div>
-                  )}
-                  
-                  {showScanner && scanningFor === 'Charlie' && (
-                    <div className="space-y-2">
-                      <QRKeyScanner 
-                        onScan={handleScanQR}
-                        onClose={() => {
-                          setShowScanner(false);
-                          setScanningFor(null);
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {charlieDecrypted && (
-                    <DataDisplay
-                      title="Charlie läser data"
-                      data={JSON.stringify(charlieDecrypted, null, 2)}
-                      variant="decrypted"
+                    <QRKeyScanner 
+                      onScan={handleScanQR}
+                      onClose={() => {
+                        setShowScanner(false);
+                        setScanningFor(null);
+                      }}
                     />
-                  )}
-                </div>
-              </ActorCard>
+                  </div>
+                </Card>
+              )}
+
+              {/* Decrypted Data Display */}
+              {aliceDecrypted && (
+                <DataDisplay
+                  title="Alice läser sin egen data"
+                  data={JSON.stringify(aliceDecrypted, null, 2)}
+                  variant="decrypted"
+                />
+              )}
+
+              {bobDecrypted && (
+                <DataDisplay
+                  title="Bob läser data"
+                  data={JSON.stringify(bobDecrypted, null, 2)}
+                  variant="decrypted"
+                />
+              )}
+
+              {charlieDecrypted && (
+                <DataDisplay
+                  title="Charlie läser data"
+                  data={JSON.stringify(charlieDecrypted, null, 2)}
+                  variant="decrypted"
+                />
+              )}
             </div>
 
             <div className="flex gap-4">
@@ -623,8 +649,8 @@ const Index = () => {
             </div>
           </div>
         )}
-
-
+          </main>
+        </div>
       </div>
     </div>
   );
