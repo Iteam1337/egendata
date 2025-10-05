@@ -1,8 +1,9 @@
 import { encode as cborEncode, decode as cborDecode } from 'cbor-x';
 import baseX from 'base-x';
 
-const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-const base58 = baseX(BASE58_ALPHABET);
+// Base45 alphabet (för QR-koder - optimerat för alphanumeric mode)
+const BASE45_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
+const base45 = baseX(BASE45_ALPHABET);
 
 export interface QRKeyData {
   n: string;      // namn
@@ -15,7 +16,8 @@ export interface QRKeyData {
 }
 
 /**
- * Konverterar en publik nyckel till QR-kod-format (CBOR + Base58)
+ * Konverterar en publik nyckel till QR-kod-format (CBOR + Base45)
+ * Base45 är optimerat för QR-kodens alphanumeric mode
  */
 export function encodeKeyForQR(name: string, publicKeyJWK: any): string {
   const keyData: QRKeyData = {
@@ -30,7 +32,7 @@ export function encodeKeyForQR(name: string, publicKeyJWK: any): string {
   
   const cborData = cborEncode(keyData);
   const uint8Array = cborData instanceof Uint8Array ? cborData : new Uint8Array(cborData);
-  return base58.encode(uint8Array);
+  return base45.encode(uint8Array);
 }
 
 /**
@@ -45,7 +47,7 @@ export function encodeKeyForCopy(name: string, publicKeyJWK: any): string {
  */
 export function decodeKeyFromQR(keyString: string): QRKeyData {
   const cleanData = keyString.replace(/\s/g, '');
-  const cborData = base58.decode(cleanData);
+  const cborData = base45.decode(cleanData);
   const keyData = cborDecode(cborData) as QRKeyData;
   return keyData;
 }

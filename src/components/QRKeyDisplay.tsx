@@ -15,17 +15,14 @@ interface QRKeyDisplayProps {
 
 export const QRKeyDisplay = ({ qrData, userName, publicKeyJWK }: QRKeyDisplayProps) => {
   const [copied, setCopied] = useState(false);
-  
-  // Generera base62-version för copy/paste
-  const copyData = encodeKeyForCopy(userName, publicKeyJWK);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(copyData);
+    navigator.clipboard.writeText(qrData);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast({
       title: "Kopierad!",
-      description: "Nyckeldata kopierad (Base62-format)",
+      description: "Nyckeldata kopierad (Base45-format)",
     });
   };
 
@@ -41,7 +38,7 @@ export const QRKeyDisplay = ({ qrData, userName, publicKeyJWK }: QRKeyDisplayPro
         <QRCodeSVG 
           value={qrData} 
           size={256}
-          level="H"
+          level="M"
           includeMargin={true}
         />
       </div>
@@ -49,17 +46,17 @@ export const QRKeyDisplay = ({ qrData, userName, publicKeyJWK }: QRKeyDisplayPro
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Format:</span>
-          <code className="text-xs bg-muted px-2 py-1 rounded">KEY1:...</code>
+          <code className="text-xs bg-muted px-2 py-1 rounded">Base45 (Alphanumeric)</code>
         </div>
         
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground">
-            Eller kopiera nyckeldatan (Base62 - enklare att klistra):
+            Eller kopiera nyckeldatan:
           </label>
           <div className="flex gap-2">
             <input
               type="text"
-              value={copyData}
+              value={qrData}
               readOnly
               className="flex-1 px-3 py-2 text-xs font-mono bg-muted border border-border rounded-md"
             />
