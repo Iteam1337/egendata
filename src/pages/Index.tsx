@@ -8,6 +8,7 @@ import { StepIndicator } from "@/components/StepIndicator";
 import { QRKeyDisplay } from "@/components/QRKeyDisplay";
 import { QRKeyScanner } from "@/components/QRKeyScanner";
 import { IPFSStatus } from "@/components/IPFSStatus";
+import { IPFSLink } from "@/components/IPFSLink";
 import { EgendataClient, IPFSStorage, type KeyPair } from "@/lib/egendata";
 import { encodeKeyForQR, decodeKeyFromQR, validateKeyData, qrKeyDataToJWK } from "@/lib/qr-key-exchange";
 import { ArrowRight, Check, QrCode, ScanLine } from "lucide-react";
@@ -32,6 +33,7 @@ const Index = () => {
   });
   
   const [encryptedData, setEncryptedData] = useState<string>("");
+  const [dataCID, setDataCID] = useState<string>("");
   const [bobDecrypted, setBobDecrypted] = useState<object | null>(null);
   const [charlieDecrypted, setCharlieDecrypted] = useState<object | null>(null);
   const [aliceDecrypted, setAliceDecrypted] = useState<object | null>(null);
@@ -106,7 +108,7 @@ const Index = () => {
       setBob(bobKeys);
       setCharlie(charlieKeys);
       
-      // Kryptera direkt Alices data
+      // Kryptera direkt Alices data och lagra i IPFS
       const result = await egendata.writeData(
         DATA_ID,
         originalData,
@@ -115,6 +117,14 @@ const Index = () => {
       );
       
       setEncryptedData(result.encryptedData);
+      
+      // Hämta CID från IPFS storage
+      const cid = ipfsStorage.getCID(DATA_ID);
+      if (cid) {
+        setDataCID(cid);
+        console.log(`✅ Data lagrad med CID: ${cid}`);
+      }
+      
       setStep(1);
       
       toast({
@@ -450,6 +460,14 @@ const Index = () => {
                       data={JSON.stringify(originalData, null, 2)}
                       variant="original"
                     />
+                    
+                    {dataCID && (
+                      <IPFSLink 
+                        cid={dataCID}
+                        title="Krypterad data i IPFS"
+                      />
+                    )}
+                    
                     <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
                       📖 Läs min data
                     </Button>
