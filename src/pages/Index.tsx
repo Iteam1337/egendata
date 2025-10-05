@@ -37,7 +37,7 @@ const Index = () => {
   const [bobReGranted, setBobReGranted] = useState(false);
 
   const DATA_ID = "alice-sensitive-data";
-  const steps = ["Setup", "Encrypt", "Share", "Revoke", "Re-grant"];
+  const steps = ["Setup", "Encrypt", "Test Access Control"];
 
   const handleGenerateKeys = async () => {
     try {
@@ -94,36 +94,12 @@ const Index = () => {
     }
   };
 
-  const handleShareAccess = async () => {
-    if (!bob || !charlie) return;
-    
-    try {
-      const bobData = await egendata.readData(DATA_ID, "Bob", bob.privateKey);
-      const charlieData = await egendata.readData(DATA_ID, "Charlie", charlie.privateKey);
-      
-      setBobDecrypted(bobData);
-      setCharlieDecrypted(charlieData);
-      setStep(3);
-      
-      toast({
-        title: "Åtkomst bekräftad!",
-        description: "Bob och Charlie kan nu dekryptera datan",
-      });
-    } catch (error) {
-      toast({
-        title: "Fel",
-        description: "Kunde inte dekryptera data",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleRevokeBob = async () => {
     try {
       await egendata.revokeAccess(DATA_ID, "Bob");
       setBobRevoked(true);
       setBobDecrypted(null);
-      setStep(4);
+      setBobReGranted(false);
       
       toast({
         title: "Åtkomst återkallad!",
@@ -180,13 +156,34 @@ const Index = () => {
       
       toast({
         title: "Data läst som Bob!",
-        description: bobRevoked ? "Bob har åtkomst igen!" : "Bob kan läsa datan",
+        description: "Bob kan läsa datan",
       });
     } catch (error) {
       setBobDecrypted(null);
       toast({
-        title: bobRevoked ? "Åtkomst nekad" : "Fel",
-        description: bobRevoked ? "Bob har inte åtkomst till datan" : "Kunde inte läsa data",
+        title: "Åtkomst nekad",
+        description: "Bob har inte åtkomst till datan",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReadAsCharlie = async () => {
+    if (!charlie || !encryptedData) return;
+    
+    try {
+      const data = await egendata.readData(DATA_ID, "Charlie", charlie.privateKey);
+      setCharlieDecrypted(data);
+      
+      toast({
+        title: "Data läst som Charlie!",
+        description: "Charlie kan läsa datan",
+      });
+    } catch (error) {
+      setCharlieDecrypted(null);
+      toast({
+        title: "Åtkomst nekad",
+        description: "Charlie har inte åtkomst till datan",
         variant: "destructive",
       });
     }
@@ -362,232 +359,159 @@ const Index = () => {
           </div>
         )}
 
-        {/* Step 2: Share Access */}
-        {step === 2 && (
+        {/* Step 2: Interactive Testing */}
+        {step >= 2 && (
           <div className="animate-fade-in space-y-8">
             <div className="space-y-4">
-              <h2 className="text-4xl font-bold">Dela åtkomst</h2>
+              <h2 className="text-4xl font-bold">Testa åtkomstkontroll</h2>
               <p className="text-lg text-muted-foreground">
-                Bob och Charlie kan nu dekryptera datan med sina privata nycklar. 
-                Varje person får en krypterad DEK (Data Encryption Key) som endast de kan dekryptera.
+                Nu kan du fritt testa att läsa data, återkalla och återge åtkomst. Alla aktörer har sina egna läsknappar.
               </p>
             </div>
 
             <div className="space-y-6">
-              <ActorCard name="Bob" role="Recipient" status={bobDecrypted ? "success" : "default"} align="left">
-                {encryptedData && (
-                  <Button onClick={handleReadAsBob} variant="outline" size="sm" className="w-full">
-                    Läs som Bob
+              {/* Alice */}
+              <ActorCard name="Alice" role="Data Owner" status="active" align="left">
+                <div className="space-y-4">
+                  <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
+                    📖 Läs som Alice
                   </Button>
-                )}
-                {bobDecrypted && (
-                  <DataDisplay
-                    title="Dekrypterad data"
-                    data={JSON.stringify(bobDecrypted, null, 2)}
-                    variant="decrypted"
-                  />
-                )}
+                  {aliceDecrypted && (
+                    <DataDisplay
+                      title="Alice läser sin egen data"
+                      data={JSON.stringify(aliceDecrypted, null, 2)}
+                      variant="decrypted"
+                    />
+                  )}
+                </div>
               </ActorCard>
 
-              <ActorCard name="Charlie" role="Recipient" status={charlieDecrypted ? "success" : "default"} align="right">
-                {charlieDecrypted && (
-                  <DataDisplay
-                    title="Dekrypterad data"
-                    data={JSON.stringify(charlieDecrypted, null, 2)}
-                    variant="decrypted"
-                  />
-                )}
-              </ActorCard>
-            </div>
-
-            <div className="flex gap-4">
-              <Button variant="outline" onClick={() => setStep(1)}>
-                Tillbaka
-              </Button>
-              {!bobDecrypted ? (
-                <Button onClick={handleShareAccess} size="lg" className="flex-1">
-                  Låt Bob & Charlie dekryptera <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              ) : (
-                <Button onClick={() => setStep(3)} size="lg" className="flex-1">
-                  Fortsätt <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Revoke Access */}
-        {step === 3 && (
-          <div className="animate-fade-in space-y-8">
-            <div className="space-y-4">
-              <h2 className="text-4xl font-bold">Återkalla åtkomst</h2>
-              <p className="text-lg text-muted-foreground">
-                Alice vill inte längre att Bob ska ha åtkomst. 
-                Hon kan återkalla Bobs åtkomst genom att ta bort hans nyckel från keystone.
-              </p>
-            </div>
-
-            <div className="space-y-6">
-              <ActorCard name="Bob" role="Recipient" status={bobRevoked ? "revoked" : "success"} align="left">
-                {encryptedData && (
+              {/* Bob */}
+              <ActorCard name="Bob" role="Recipient" status={bobRevoked ? "revoked" : (bobDecrypted ? "success" : "default")} align="right">
+                <div className="space-y-4">
                   <Button 
                     onClick={handleReadAsBob} 
-                    variant="outline" 
+                    variant="default"
                     size="sm" 
-                    className="w-full mb-4"
-                  >
-                    Försök läs som Bob
-                  </Button>
-                )}
-                {bobRevoked ? (
-                  <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
-                    <p className="text-sm text-destructive font-medium">
-                      ✗ Åtkomst återkallad
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Bob kan inte längre dekryptera datan
-                    </p>
-                  </div>
-                ) : (
-                  <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
-                    <p className="text-sm text-success font-medium">
-                      ✓ Har åtkomst
-                    </p>
-                  </div>
-                )}
-                {bobDecrypted && !bobRevoked && (
-                  <DataDisplay
-                    title="Dekrypterad data"
-                    data={JSON.stringify(bobDecrypted, null, 2)}
-                    variant="decrypted"
-                  />
-                )}
-              </ActorCard>
-
-              <ActorCard name="Charlie" role="Recipient" status="success" align="right">
-                <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
-                  <p className="text-sm text-success font-medium">
-                    ✓ Behåller åtkomst
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Charlie påverkas inte av Bobs återkallade åtkomst
-                  </p>
-                </div>
-              </ActorCard>
-            </div>
-
-            <div className="flex gap-4">
-              <Button variant="outline" onClick={() => setStep(2)}>
-                Tillbaka
-              </Button>
-              {!bobRevoked ? (
-                <Button onClick={handleRevokeBob} variant="destructive" size="lg" className="flex-1">
-                  Återkalla Bobs åtkomst <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              ) : (
-                <Button onClick={() => setStep(4)} size="lg" className="flex-1">
-                  Fortsätt <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Re-grant Access via QR */}
-        {step === 4 && (
-          <div className="animate-fade-in space-y-8">
-            <div className="space-y-4">
-              <h2 className="text-4xl font-bold">Återge åtkomst via QR-kod</h2>
-              <p className="text-lg text-muted-foreground">
-                Bob vill få tillgång igen. Han kan dela sin publika nyckel via QR-kod eller copy/paste, 
-                och Alice kan scanna den för att återge åtkomst.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Bob's side */}
-              <Card className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <QrCode className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold">Bob delar sin nyckel</h3>
-                </div>
-                
-                {!showBobQR ? (
-                  <Button onClick={handleGenerateBobQR} className="w-full">
-                    Generera QR-kod
-                  </Button>
-                ) : (
-                  <QRKeyDisplay qrData={bobQRData} userName="Bob" publicKeyJWK={bob!.publicKeyJWK} />
-                )}
-              </Card>
-
-              {/* Alice's side */}
-              <Card className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <ScanLine className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold">Alice scannar nyckeln</h3>
-                </div>
-                
-                {!showScanner && !bobReGranted && (
-                  <Button 
-                    onClick={() => setShowScanner(true)} 
-                    variant="secondary"
                     className="w-full"
                   >
-                    Scanna / Klistra in
+                    📖 Läs som Bob
                   </Button>
-                )}
-                
-                {showScanner && (
-                  <QRKeyScanner 
-                    onScan={handleScanQR}
-                    onClose={() => setShowScanner(false)}
-                  />
-                )}
-                
-                {bobReGranted && (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
-                      <p className="text-sm text-success font-medium flex items-center gap-2">
-                        <Check className="w-4 h-4" />
-                        Åtkomst återställd!
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Bob har nu åtkomst till datan igen
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={handleReadAsBob} 
-                      variant="default"
-                      className="w-full"
-                    >
-                      Verifiera: Läs som Bob
-                    </Button>
-                    {bobDecrypted && (
-                      <DataDisplay
-                        title="Bob läser data efter åtkomst återställd"
-                        data={JSON.stringify(bobDecrypted, null, 2)}
-                        variant="decrypted"
-                      />
+                  
+                  <div className="flex gap-2">
+                    {!bobRevoked ? (
+                      <Button 
+                        onClick={handleRevokeBob} 
+                        variant="destructive" 
+                        size="sm" 
+                        className="flex-1"
+                      >
+                        🚫 Återkalla
+                      </Button>
+                    ) : (
+                      <>
+                        <Button 
+                          onClick={handleGenerateBobQR} 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                        >
+                          <QrCode className="w-4 h-4 mr-2" />
+                          QR-kod
+                        </Button>
+                        <Button 
+                          onClick={() => setShowScanner(true)} 
+                          variant="default"
+                          size="sm" 
+                          className="flex-1"
+                        >
+                          <ScanLine className="w-4 h-4 mr-2" />
+                          Återge
+                        </Button>
+                      </>
                     )}
                   </div>
-                )}
-              </Card>
+
+                  {bobRevoked && !showBobQR && !showScanner && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+                      <p className="text-sm text-destructive font-medium">
+                        ✗ Åtkomst återkallad
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Dela QR-kod och scanna för att återge
+                      </p>
+                    </div>
+                  )}
+
+                  {showBobQR && (
+                    <div className="space-y-2">
+                      <QRKeyDisplay qrData={bobQRData} userName="Bob" publicKeyJWK={bob!.publicKeyJWK} />
+                      <Button 
+                        onClick={() => setShowBobQR(false)} 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full"
+                      >
+                        Stäng QR
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {showScanner && (
+                    <div className="space-y-2">
+                      <QRKeyScanner 
+                        onScan={handleScanQR}
+                        onClose={() => setShowScanner(false)}
+                      />
+                    </div>
+                  )}
+
+                  {bobDecrypted && (
+                    <DataDisplay
+                      title="Bob läser data"
+                      data={JSON.stringify(bobDecrypted, null, 2)}
+                      variant="decrypted"
+                    />
+                  )}
+                </div>
+              </ActorCard>
+
+              {/* Charlie */}
+              <ActorCard name="Charlie" role="Recipient" status={charlieDecrypted ? "success" : "default"} align="left">
+                <div className="space-y-4">
+                  <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
+                    📖 Läs som Charlie
+                  </Button>
+                  {charlieDecrypted && (
+                    <DataDisplay
+                      title="Charlie läser data"
+                      data={JSON.stringify(charlieDecrypted, null, 2)}
+                      variant="decrypted"
+                    />
+                  )}
+                </div>
+              </ActorCard>
             </div>
 
             <div className="flex gap-4">
-              <Button variant="outline" onClick={() => setStep(3)}>
-                Tillbaka
+              <Button variant="outline" onClick={() => {
+                setStep(0);
+                setEncryptedData("");
+                setAliceDecrypted(null);
+                setBobDecrypted(null);
+                setCharlieDecrypted(null);
+                setBobRevoked(false);
+                setBobReGranted(false);
+                setShowBobQR(false);
+                setShowScanner(false);
+              }}>
+                Börja om
               </Button>
-              {bobReGranted && (
-                <Button onClick={() => setStep(0)} size="lg" className="flex-1">
-                  Börja om demo <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              )}
             </div>
           </div>
         )}
+
+
       </div>
     </div>
   );
