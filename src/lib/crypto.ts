@@ -136,3 +136,45 @@ export function revokeAccess(keystone: Keystone, recipientName: string): Keyston
     recipients: keystone.recipients.filter(r => r.name !== recipientName)
   };
 }
+
+// Re-grant access by adding a recipient back to the keystone
+export async function reGrantAccess(
+  encryptedData: string,
+  currentKeystone: Keystone,
+  recipientName: string,
+  recipientPublicKey: CryptoKey,
+  ownerPrivateKey: CryptoKey
+): Promise<Keystone> {
+  // First, decrypt the data using the owner's key to get the DEK
+  // We need to find the owner in the keystone
+  const ownerKey = currentKeystone.recipients[0]; // Assuming first recipient has access
+  if (!ownerKey) {
+    throw new Error('No valid key found to decrypt data');
+  }
+  
+  // Decrypt DEK using owner's private key
+  const { plaintext: dekRaw } = await jose.compactDecrypt(
+    ownerKey.encryptedDEK,
+    ownerPrivateKey
+  );
+  
+  // Now encrypt the DEK for the new recipient
+  const encryptedDEK = await new jose.CompactEncrypt(
+    dekRaw
+  )
+    .setProtectedHeader({ alg: 'RSA-OAEP-256', enc: 'A256GCM' })
+    .encrypt(recipientPublicKey);
+  
+  // Add the new recipient to the keystone
+  return {
+    ...currentKeystone,
+    recipients: [
+      ...currentKeystone.recipients,
+      {
+        name: recipientName,
+        encryptedDEK
+      }
+    ]
+  };
+}
+

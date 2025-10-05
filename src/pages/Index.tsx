@@ -4,15 +4,20 @@ import { toast } from "@/hooks/use-toast";
 import { UserCard } from "@/components/UserCard";
 import { DataDisplay } from "@/components/DataDisplay";
 import { StepIndicator } from "@/components/StepIndicator";
+import { QRKeyDisplay } from "@/components/QRKeyDisplay";
+import { QRKeyScanner } from "@/components/QRKeyScanner";
 import { 
   generateKeyPair, 
   encryptWithSharedAccess, 
   decryptData, 
   revokeAccess,
+  reGrantAccess,
   KeyPair,
   Keystone
 } from "@/lib/crypto";
-import { Shield, PlayCircle, UserX } from "lucide-react";
+import { encodeKeyForQR, decodeKeyFromQR, validateKeyData } from "@/lib/qr-key-exchange";
+import { Shield, PlayCircle, UserX, QrCode, ScanLine, UserPlus } from "lucide-react";
+import * as jose from 'jose';
 
 const Index = () => {
   const [step, setStep] = useState(0);
@@ -33,6 +38,12 @@ const Index = () => {
   const [charlieDecryptedAfterRevoke, setCharlieDecryptedAfterRevoke] = useState<object | null>(null);
   const [bobRevoked, setBobRevoked] = useState(false);
   const [bobFailedDecrypt, setBobFailedDecrypt] = useState(false);
+  
+  // QR code states
+  const [showBobQR, setShowBobQR] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [bobQRData, setBobQRData] = useState<string>("");
+  const [bobReGranted, setBobReGranted] = useState(false);
 
   const steps = ["Generera nycklar", "Kryptera", "Dekryptera", "Revoke Bob", "Verifiera"];
 
@@ -164,6 +175,81 @@ const Index = () => {
       toast({
         title: "Dekryptering nekad! ✓",
         description: "Bob kan inte längre dekryptera datan efter revoke",
+      });
+    }
+  };
+
+  const handleGenerateBobQR = () => {
+    if (!bob) return;
+    
+    const qrData = encodeKeyForQR("Bob", bob.publicKeyJWK);
+    setBobQRData(qrData);
+    setShowBobQR(true);
+    
+    toast({
+      title: "QR-kod genererad!",
+      description: "Bob kan nu visa sin QR-kod för Alice",
+    });
+  };
+
+  const handleScanQR = async (qrData: string) => {
+    setShowScanner(false);
+    
+    try {
+      const keyData = decodeKeyFromQR(qrData);
+      
+      if (!validateKeyData(keyData)) {
+        toast({
+          title: "Ogiltig QR-kod",
+          description: "QR-koden är för gammal eller ogiltig",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (keyData.name !== "Bob") {
+        toast({
+          title: "Fel användare",
+          description: `QR-koden tillhör ${keyData.name}, inte Bob`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!alice || !keystone || !encryptedData) {
+        toast({
+          title: "Fel",
+          description: "Saknar nödvändig data för att återge åtkomst",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Import Bob's public key from JWK
+      const bobPublicKey = await jose.importJWK(keyData.publicKeyJWK, 'RSA-OAEP-256') as CryptoKey;
+      
+      // Re-grant access to Bob
+      const newKeystone = await reGrantAccess(
+        encryptedData,
+        keystone,
+        "Bob",
+        bobPublicKey,
+        alice.privateKey
+      );
+      
+      setKeystone(newKeystone);
+      setBobReGranted(true);
+      
+      toast({
+        title: "Åtkomst återställd!",
+        description: "Bob har nu åtkomst till datan igen",
+      });
+    } catch (error) {
+      console.error('QR scan error:', error);
+      toast({
+        title: "Fel vid skanning",
+        description: "Kunde inte läsa QR-koden korrekt",
+        variant: "destructive",
       });
     }
   };
@@ -356,6 +442,78 @@ const Index = () => {
                   variant="decrypted"
                 />
               )}
+            </div>
+          )}
+
+          {/* Step 6: QR Code Key Exchange */}
+          {step >= 4 && bobRevoked && (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-semibold flex items-center gap-2">
+                <span className="w-8 h-8 rounded-full bg-gradient-primary text-primary-foreground flex items-center justify-center text-sm font-bold">6</span>
+                Nyckelutbyte med QR-kod
+              </h2>
+              
+              <p className="text-muted-foreground">
+                Bob vill få tillgång igen. Bob visar sin publika nyckel via QR-kod och Alice scannar den för att återge åtkomst.
+              </p>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Bob generates QR code */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <QrCode className="w-4 h-4 text-primary" />
+                    Steg 1: Bob visar sin nyckel
+                  </h3>
+                  
+                  {!showBobQR ? (
+                    <Button onClick={handleGenerateBobQR} size="lg" className="w-full shadow-card">
+                      <QrCode className="w-5 h-5 mr-2" />
+                      Generera Bobs QR-kod
+                    </Button>
+                  ) : (
+                    <QRKeyDisplay qrData={bobQRData} userName="Bob" />
+                  )}
+                </div>
+                
+                {/* Alice scans QR code */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <ScanLine className="w-4 h-4 text-accent" />
+                    Steg 2: Alice scannar QR-koden
+                  </h3>
+                  
+                  {!showScanner && !bobReGranted && (
+                    <Button 
+                      onClick={() => setShowScanner(true)} 
+                      size="lg" 
+                      className="w-full shadow-card"
+                      variant="secondary"
+                    >
+                      <ScanLine className="w-5 h-5 mr-2" />
+                      Skanna Bobs QR-kod
+                    </Button>
+                  )}
+                  
+                  {showScanner && (
+                    <QRKeyScanner 
+                      onScan={handleScanQR}
+                      onClose={() => setShowScanner(false)}
+                    />
+                  )}
+                  
+                  {bobReGranted && (
+                    <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
+                      <div className="flex items-center gap-2 text-success mb-2">
+                        <UserPlus className="w-5 h-5" />
+                        <span className="font-semibold">Åtkomst återställd!</span>
+                      </div>
+                      <p className="text-sm text-success">
+                        Bob har nu åtkomst till datan igen via QR-kod-utbyte
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>
