@@ -40,20 +40,22 @@ export function encodeKeyForQR(name: string, publicKeyJWK: any): string {
   // Encode to Base45 (effektivare än Base64 för QR-koder)
   const base45Data = base45.encode(uint8Array);
   
-  // Add prefix for identification
-  return `KEY1:${base45Data}`;
+  // Add prefix and remove any whitespace
+  return `KEY1:${base45Data}`.replace(/\s/g, '');
 }
 
 /**
  * Dekoderar en QR-kod tillbaka till nyckeldata
  */
 export function decodeKeyFromQR(qrData: string): QRKeyData {
-  // Ta bort prefix
-  if (!qrData.startsWith('KEY1:')) {
+  // Ta bort alla mellanslag och prefix
+  const cleanData = qrData.replace(/\s/g, '');
+  
+  if (!cleanData.startsWith('KEY1:')) {
     throw new Error('Invalid QR code format');
   }
   
-  const base45Data = qrData.substring(5);
+  const base45Data = cleanData.substring(5);
   
   // Decode from Base45
   const cborData = base45.decode(base45Data);
