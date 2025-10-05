@@ -24,8 +24,11 @@ export function encodeKeyForQR(name: string, publicKeyJWK: any): string {
   // Encode to CBOR
   const cborData = cborEncode(keyData);
   
+  // Convert to Uint8Array if needed
+  const uint8Array = cborData instanceof Uint8Array ? cborData : new Uint8Array(cborData);
+  
   // Encode to Base45
-  const base45Data = base45.encode(Buffer.from(cborData));
+  const base45Data = base45.encode(uint8Array);
   
   // Add prefix for identification (liknande HC1: prefix i EU COVID cert)
   return `KEY1:${base45Data}`;
@@ -46,7 +49,7 @@ export function decodeKeyFromQR(qrData: string): QRKeyData {
   const cborData = base45.decode(base45Data);
   
   // Decode from CBOR
-  const keyData = cborDecode(Buffer.from(cborData)) as QRKeyData;
+  const keyData = cborDecode(cborData) as QRKeyData;
   
   return keyData;
 }
