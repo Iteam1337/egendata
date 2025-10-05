@@ -74,10 +74,10 @@ export const QRKeyScanner = ({ onScan, onClose }: QRKeyScannerProps) => {
       return;
     }
     
-    if (!trimmedInput.startsWith('KEY1:')) {
+    if (!trimmedInput.startsWith('KEY1:') && !trimmedInput.startsWith('KEY2:')) {
       toast({
         title: "Ogiltig nyckeldata",
-        description: "Nyckeldatan måste börja med KEY1:",
+        description: "Nyckeldatan måste börja med KEY1: (QR) eller KEY2: (copy/paste)",
         variant: "destructive",
       });
       return;
@@ -121,10 +121,10 @@ export const QRKeyScanner = ({ onScan, onClose }: QRKeyScannerProps) => {
         <TabsContent value="manual" className="space-y-4 mt-0">
           <div className="space-y-2">
             <label className="text-sm font-medium text-card-foreground">
-              Klistra in nyckeldata:
+              Klistra in nyckeldata (KEY1: eller KEY2:):
             </label>
             <textarea
-              placeholder="KEY1:..."
+              placeholder="KEY2:... (Base62 format)"
               value={manualInput}
               onChange={(e) => setManualInput(e.target.value)}
               className="w-full min-h-[120px] px-3 py-2 text-xs font-mono bg-muted border border-border rounded-md resize-none"

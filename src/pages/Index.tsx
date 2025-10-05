@@ -470,7 +470,7 @@ const Index = () => {
                       Generera Bobs QR-kod
                     </Button>
                   ) : (
-                    <QRKeyDisplay qrData={bobQRData} userName="Bob" />
+                    <QRKeyDisplay qrData={bobQRData} userName="Bob" publicKeyJWK={bob!.publicKeyJWK} />
                   )}
                 </div>
                 
