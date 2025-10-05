@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
@@ -7,17 +7,14 @@ import { DataDisplay } from "@/components/DataDisplay";
 import { StepIndicator } from "@/components/StepIndicator";
 import { QRKeyDisplay } from "@/components/QRKeyDisplay";
 import { QRKeyScanner } from "@/components/QRKeyScanner";
-import { IPFSStatus } from "@/components/IPFSStatus";
-import { EgendataClient, IPFSStorage, type KeyPair } from "@/lib/egendata";
+import { EgendataClient, InMemoryStorage, type KeyPair } from "@/lib/egendata";
 import { encodeKeyForQR, decodeKeyFromQR, validateKeyData, qrKeyDataToJWK } from "@/lib/qr-key-exchange";
 import { ArrowRight, Check, QrCode, ScanLine } from "lucide-react";
 
 const Index = () => {
-  const [ipfsStorage] = useState(() => new IPFSStorage());
-  const [egendata] = useState(() => new EgendataClient(ipfsStorage));
-  const [ipfsInitialized, setIpfsInitialized] = useState(false);
-  const [ipfsInitializing, setIpfsInitializing] = useState(false);
-  const [ipfsError, setIpfsError] = useState<string>();
+  // Start med InMemoryStorage för enkelhetens skull
+  const [storage] = useState(() => new InMemoryStorage());
+  const [egendata] = useState(() => new EgendataClient(storage));
   const [step, setStep] = useState(0);
   const [alice, setAlice] = useState<KeyPair | null>(null);
   const [bob, setBob] = useState<KeyPair | null>(null);
@@ -47,48 +44,9 @@ const Index = () => {
   const DATA_ID = "alice-sensitive-data";
   const steps = ["Alice har data", "Dela med Bob", "Dela med Charlie", "Återkalla Bob", "Återge till Bob"];
 
-  // Initialisera IPFS när komponenten laddas
-  useEffect(() => {
-    const initIPFS = async () => {
-      console.log('🔄 Starting IPFS initialization from useEffect');
-      setIpfsInitializing(true);
-      try {
-        await ipfsStorage.initialize();
-        console.log('✅ IPFS initialization complete');
-        
-        await ipfsStorage.restore(); // Ladda befintliga CID mappings
-        console.log('✅ IPFS restore complete');
-        
-        setIpfsInitialized(true);
-        console.log('✅ IPFS redo att användas');
-      } catch (error) {
-        console.error('❌ IPFS initialization failed:', error);
-        setIpfsError(error instanceof Error ? error.message : 'Okänt fel');
-      } finally {
-        setIpfsInitializing(false);
-      }
-    };
-
-    initIPFS();
-
-    // Cleanup när komponenten unmountas
-    return () => {
-      console.log('🧹 Cleaning up IPFS');
-      ipfsStorage.stop();
-    };
-  }, [ipfsStorage]);
-
   const handleGenerateKeys = async () => {
-    if (!ipfsInitialized) {
-      toast({
-        title: "Vänta...",
-        description: "IPFS-noden initialiseras fortfarande",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
+      // Generera nycklar för alla tre aktörer
       const aliceKeys = await egendata.generateKeyPair("Alice");
       const bobKeys = await egendata.generateKeyPair("Bob");
       const charlieKeys = await egendata.generateKeyPair("Charlie");
@@ -381,13 +339,6 @@ const Index = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="space-y-8">
-          {/* IPFS Status */}
-          <IPFSStatus 
-            isInitialized={ipfsInitialized}
-            isInitializing={ipfsInitializing}
-            error={ipfsError}
-          />
-
           <StepIndicator steps={steps} currentStep={step} />
 
         {/* Step 0: Introduction */}
@@ -400,22 +351,20 @@ const Index = () => {
               </h2>
               <p className="text-lg text-muted-foreground">
                 Följ med i berättelsen om hur Alice kontrollerar sin känsliga data och delar den med andra.
-                Data lagras decentraliserat i IPFS.
               </p>
             </div>
 
             <Card className="p-8 bg-muted/30">
               <h3 className="font-semibold text-lg mb-4">Berättelsen</h3>
               <p className="text-muted-foreground mb-6">
-                Alice har känslig data som hon vill lagra säkert i IPFS. Hon bestämmer sig för att dela den med Bob, 
+                Alice har känslig data som hon vill lagra säkert. Hon bestämmer sig för att dela den med Bob, 
                 sedan även med Charlie. Men när hon ångrar sig tar hon bort Bobs åtkomst. Efter en tid ger hon Bob 
-                ett nytt försök genom att scanna hans QR-kod med CID.
+                ett nytt försök genom att scanna hans QR-kod.
               </p>
               <Button 
                 onClick={handleGenerateKeys} 
                 size="lg" 
                 className="w-full"
-                disabled={!ipfsInitialized}
               >
                 Starta berättelsen <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
