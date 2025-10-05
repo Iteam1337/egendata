@@ -394,12 +394,6 @@ const Index = () => {
                         variant="decrypted"
                       />
                     )}
-                    
-                    <div className="pt-4 border-t">
-                      <Button onClick={handleShareWithBob} size="lg" className="w-full">
-                        Dela med Bob <ArrowRight className="w-5 h-5 ml-2" />
-                      </Button>
-                    </div>
                   </div>
                 </ActorCard>
               </div>
@@ -414,7 +408,17 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="flex gap-4">
+            {/* Action buttons */}
+            <div className="flex flex-col gap-4">
+              <div className="p-6 bg-muted/30 rounded-lg">
+                <h3 className="text-sm font-semibold mb-3">Dela data med:</h3>
+                <div className="flex gap-3">
+                  <Button onClick={handleShareWithBob} size="lg" className="flex-1">
+                    Dela med Bob <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </div>
+              </div>
+              
               <Button variant="outline" onClick={() => setStep(0)}>
                 Tillbaka
               </Button>
@@ -428,7 +432,7 @@ const Index = () => {
             <div className="space-y-4">
               <h2 className="text-4xl font-bold">Bob får åtkomst</h2>
               <p className="text-lg text-muted-foreground">
-                Alice har delat ut en nyckel till Bob från sitt kort. Nu kan Bob läsa Alices data.
+                Alice har delat ut en nyckel till Bob. Nu kan Bob läsa Alices data.
               </p>
             </div>
 
@@ -445,13 +449,6 @@ const Index = () => {
                         ✓ Alice kan alltid läsa sin data
                       </div>
                     )}
-                    
-                    <div className="pt-4 border-t">
-                      <p className="text-xs text-muted-foreground mb-2">Dela med fler:</p>
-                      <Button onClick={handleShareWithCharlie} size="lg" className="w-full">
-                        Dela med Charlie <ArrowRight className="w-5 h-5 ml-2" />
-                      </Button>
-                    </div>
                   </div>
                 </ActorCard>
               </div>
@@ -475,7 +472,17 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="flex gap-4">
+            {/* Action buttons */}
+            <div className="flex flex-col gap-4">
+              <div className="p-6 bg-muted/30 rounded-lg">
+                <h3 className="text-sm font-semibold mb-3">Dela data med:</h3>
+                <div className="flex gap-3">
+                  <Button onClick={handleShareWithCharlie} size="lg" className="flex-1">
+                    Dela med Charlie <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </div>
+              </div>
+              
               <Button variant="outline" onClick={() => setStep(1)}>
                 Tillbaka
               </Button>
@@ -489,7 +496,7 @@ const Index = () => {
             <div className="space-y-4">
               <h2 className="text-4xl font-bold">Charlie får också åtkomst</h2>
               <p className="text-lg text-muted-foreground">
-                Alice har nu delat sin data med både Bob och Charlie från sitt eget kort. Båda kan läsa datan.
+                Alice har nu delat sin data med både Bob och Charlie. Båda kan läsa datan.
               </p>
             </div>
 
@@ -501,13 +508,6 @@ const Index = () => {
                     <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
                       📖 Läs min data
                     </Button>
-                    
-                    <div className="pt-4 border-t">
-                      <p className="text-xs text-muted-foreground mb-2">Hantera åtkomst:</p>
-                      <Button onClick={handleRevokeBob} variant="destructive" size="lg" className="w-full">
-                        🚫 Återkalla Bob <ArrowRight className="w-5 h-5 ml-2" />
-                      </Button>
-                    </div>
                   </div>
                 </ActorCard>
               </div>
@@ -537,7 +537,17 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="flex gap-4">
+            {/* Action buttons */}
+            <div className="flex flex-col gap-4">
+              <div className="p-6 bg-muted/30 rounded-lg">
+                <h3 className="text-sm font-semibold mb-3">Hantera åtkomst:</h3>
+                <div className="flex gap-3">
+                  <Button onClick={handleRevokeBob} variant="destructive" size="lg" className="flex-1">
+                    🚫 Återkalla Bob <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </div>
+              </div>
+              
               <Button variant="outline" onClick={() => setStep(2)}>
                 Tillbaka
               </Button>
@@ -551,7 +561,7 @@ const Index = () => {
             <div className="space-y-4">
               <h2 className="text-4xl font-bold">Alice ångrar sig</h2>
               <p className="text-lg text-muted-foreground">
-                Alice har återkallat Bobs åtkomst från sitt kort. Bob kan inte längre läsa datan.
+                Alice har återkallat Bobs åtkomst. Bob kan inte längre läsa datan.
               </p>
             </div>
 
@@ -564,51 +574,31 @@ const Index = () => {
                       📖 Läs min data
                     </Button>
                     
-                    <div className="pt-4 border-t">
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Väntar på Bobs nyckel för att ge honom nytt försök...
-                      </p>
-                      {showScanner && scanningFor === 'Bob' && (
-                        <Card className="p-4 bg-primary/5 border-primary">
-                          <div className="space-y-4">
-                            <p className="text-sm font-medium">Scanna Bobs QR-kod</p>
-                            <QRKeyScanner 
-                              onScan={handleScanQR}
-                              onClose={() => {
-                                setShowScanner(false);
-                                setScanningFor(null);
-                              }}
-                            />
-                            <Button 
-                              onClick={() => { 
-                                setShowScanner(false); 
-                                setScanningFor(null); 
-                              }} 
-                              variant="ghost" 
-                              size="sm" 
-                              className="w-full"
-                            >
-                              Avbryt
-                            </Button>
-                          </div>
-                        </Card>
-                      )}
-                      
-                      {!showScanner && (
-                        <Button 
-                          onClick={() => {
-                            setScanningFor('Bob');
-                            setShowScanner(true);
-                          }}
-                          variant="default"
-                          size="lg"
-                          className="w-full"
-                        >
-                          <ScanLine className="w-4 h-4 mr-2" />
-                          Ta emot Bobs nyckel
-                        </Button>
-                      )}
-                    </div>
+                    {showScanner && scanningFor === 'Bob' && (
+                      <Card className="p-4 bg-primary/5 border-primary">
+                        <div className="space-y-4">
+                          <p className="text-sm font-medium">Scanna Bobs QR-kod</p>
+                          <QRKeyScanner 
+                            onScan={handleScanQR}
+                            onClose={() => {
+                              setShowScanner(false);
+                              setScanningFor(null);
+                            }}
+                          />
+                          <Button 
+                            onClick={() => { 
+                              setShowScanner(false); 
+                              setScanningFor(null); 
+                            }} 
+                            variant="ghost" 
+                            size="sm" 
+                            className="w-full"
+                          >
+                            Avbryt
+                          </Button>
+                        </div>
+                      </Card>
+                    )}
                   </div>
                 </ActorCard>
               </div>
@@ -629,7 +619,7 @@ const Index = () => {
                       <Button 
                         onClick={handleGenerateBobQR} 
                         variant="default"
-                        size="lg"
+                        size="sm"
                         className="w-full"
                       >
                         <QrCode className="w-4 h-4 mr-2" />
@@ -665,7 +655,27 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="flex gap-4">
+            {/* Action buttons */}
+            <div className="flex flex-col gap-4">
+              <div className="p-6 bg-muted/30 rounded-lg">
+                <h3 className="text-sm font-semibold mb-3">Dela med nyckel:</h3>
+                <div className="flex gap-3">
+                  <Button 
+                    onClick={() => {
+                      setScanningFor('Bob');
+                      setShowScanner(true);
+                    }}
+                    variant="default"
+                    size="lg"
+                    className="flex-1"
+                    disabled={showScanner}
+                  >
+                    <ScanLine className="w-4 h-4 mr-2" />
+                    Scanna nyckel från Bob/Charlie
+                  </Button>
+                </div>
+              </div>
+              
               <Button variant="outline" onClick={() => setStep(3)}>
                 Tillbaka
               </Button>
