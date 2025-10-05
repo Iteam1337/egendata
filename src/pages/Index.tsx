@@ -27,6 +27,7 @@ const Index = () => {
   const [encryptedData, setEncryptedData] = useState<string>("");
   const [bobDecrypted, setBobDecrypted] = useState<object | null>(null);
   const [charlieDecrypted, setCharlieDecrypted] = useState<object | null>(null);
+  const [aliceDecrypted, setAliceDecrypted] = useState<object | null>(null);
   const [bobRevoked, setBobRevoked] = useState(false);
   
   // QR code states
@@ -148,6 +149,47 @@ const Index = () => {
       title: "QR-kod genererad!",
       description: "Bob kan nu dela sin nyckel via QR-kod",
     });
+  };
+
+  const handleReadAsAlice = async () => {
+    if (!alice || !encryptedData) return;
+    
+    try {
+      const data = await egendata.readData(DATA_ID, "Alice", alice.privateKey);
+      setAliceDecrypted(data);
+      
+      toast({
+        title: "Data läst som Alice!",
+        description: "Alice kan alltid läsa sin egen data",
+      });
+    } catch (error) {
+      toast({
+        title: "Fel",
+        description: "Alice kunde inte läsa datan",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReadAsBob = async () => {
+    if (!bob || !encryptedData) return;
+    
+    try {
+      const data = await egendata.readData(DATA_ID, "Bob", bob.privateKey);
+      setBobDecrypted(data);
+      
+      toast({
+        title: "Data läst som Bob!",
+        description: bobRevoked ? "Bob har åtkomst igen!" : "Bob kan läsa datan",
+      });
+    } catch (error) {
+      setBobDecrypted(null);
+      toast({
+        title: bobRevoked ? "Åtkomst nekad" : "Fel",
+        description: bobRevoked ? "Bob har inte åtkomst till datan" : "Kunde inte läsa data",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleScanQR = async (qrData: string) => {
@@ -277,6 +319,18 @@ const Index = () => {
                   data={JSON.stringify(originalData, null, 2)}
                   variant="original"
                 />
+                {encryptedData && (
+                  <Button onClick={handleReadAsAlice} variant="outline" size="sm" className="mt-4 w-full">
+                    Läs som Alice
+                  </Button>
+                )}
+                {aliceDecrypted && (
+                  <DataDisplay
+                    title="Alice läser sin egen data"
+                    data={JSON.stringify(aliceDecrypted, null, 2)}
+                    variant="decrypted"
+                  />
+                )}
               </ActorCard>
 
               {encryptedData && (
@@ -321,6 +375,11 @@ const Index = () => {
 
             <div className="space-y-6">
               <ActorCard name="Bob" role="Recipient" status={bobDecrypted ? "success" : "default"} align="left">
+                {encryptedData && (
+                  <Button onClick={handleReadAsBob} variant="outline" size="sm" className="w-full">
+                    Läs som Bob
+                  </Button>
+                )}
                 {bobDecrypted && (
                   <DataDisplay
                     title="Dekrypterad data"
@@ -371,6 +430,16 @@ const Index = () => {
 
             <div className="space-y-6">
               <ActorCard name="Bob" role="Recipient" status={bobRevoked ? "revoked" : "success"} align="left">
+                {encryptedData && (
+                  <Button 
+                    onClick={handleReadAsBob} 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full mb-4"
+                  >
+                    Försök läs som Bob
+                  </Button>
+                )}
                 {bobRevoked ? (
                   <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
                     <p className="text-sm text-destructive font-medium">
@@ -386,6 +455,13 @@ const Index = () => {
                       ✓ Har åtkomst
                     </p>
                   </div>
+                )}
+                {bobDecrypted && !bobRevoked && (
+                  <DataDisplay
+                    title="Dekrypterad data"
+                    data={JSON.stringify(bobDecrypted, null, 2)}
+                    variant="decrypted"
+                  />
                 )}
               </ActorCard>
 
@@ -471,14 +547,30 @@ const Index = () => {
                 )}
                 
                 {bobReGranted && (
-                  <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
-                    <p className="text-sm text-success font-medium flex items-center gap-2">
-                      <Check className="w-4 h-4" />
-                      Åtkomst återställd!
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Bob har nu åtkomst till datan igen
-                    </p>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
+                      <p className="text-sm text-success font-medium flex items-center gap-2">
+                        <Check className="w-4 h-4" />
+                        Åtkomst återställd!
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Bob har nu åtkomst till datan igen
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={handleReadAsBob} 
+                      variant="default"
+                      className="w-full"
+                    >
+                      Verifiera: Läs som Bob
+                    </Button>
+                    {bobDecrypted && (
+                      <DataDisplay
+                        title="Bob läser data efter åtkomst återställd"
+                        data={JSON.stringify(bobDecrypted, null, 2)}
+                        variant="decrypted"
+                      />
+                    )}
                   </div>
                 )}
               </Card>
