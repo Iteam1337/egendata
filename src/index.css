@@ -2,6 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    /* egenDATA cyan/turquoise color scheme */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 5%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 5%;
+    
+    /* Cyan as primary color */
+    --primary: 188 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Supporting colors */
+    --secondary: 188 100% 45%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 188 95% 55%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* UI colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 188 100% 50%;
+    --radius: 0.75rem;
+    
+    /* Success color */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 98%;
+    
+    /* Chart colors */
+    --chart-1: 188 100% 50%;
+    --chart-2: 188 95% 60%;
+    --chart-3: 188 90% 70%;
+    --chart-4: 188 85% 80%;
+    --chart-5: 188 80% 90%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(188 100% 50%), hsl(188 95% 60%));
+    --gradient-card: linear-gradient(to bottom, hsl(0 0% 100%), hsl(0 0% 98%));
+    
+    /* Shadows */
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    --shadow-elevated: 0 10px 25px -5px rgb(0 0 0 / 0.1);
+  }
+
+  .dark {
+    --background: 0 0% 5%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 188 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 188 100% 45%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 188 95% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 188 100% 50%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 98%;
+    --gradient-card: linear-gradient(to bottom, hsl(0 0% 8%), hsl(0 0% 6%));
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */

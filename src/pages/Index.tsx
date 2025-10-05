@@ -255,19 +255,25 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-4 py-12">
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-primary rounded-2xl mb-4 shadow-elevated">
-            <Shield className="w-8 h-8 text-primary-foreground" />
+        <div className="mb-16">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-white rounded-sm" style={{ 
+                backgroundImage: `repeating-linear-gradient(90deg, hsl(188 100% 50%) 0px, hsl(188 100% 50%) 2px, transparent 2px, transparent 4px),
+                                 repeating-linear-gradient(0deg, hsl(188 100% 50%) 0px, hsl(188 100% 50%) 2px, transparent 2px, transparent 4px)` 
+              }} />
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              egen<span className="text-primary">DATA</span>
+            </h1>
           </div>
-          <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Egendata Kryptering Demo
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            En interaktiv demonstration av delad kryptering med dynamisk åtkomstkontroll
-          </p>
+          <p className="text-sm italic font-serif text-muted-foreground mb-2">Holy grail:</p>
+          <h2 className="text-5xl md:text-6xl font-bold leading-tight max-w-4xl">
+            Secure decentralised datastreams where the end user has full control
+          </h2>
         </div>
 
         {/* Step Indicator */}
