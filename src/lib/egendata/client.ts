@@ -1,6 +1,7 @@
 import * as jose from 'jose';
 import { StorageAdapter, KeyPair, Keystone, StoredData } from './types';
 import { InMemoryStorage } from './storage';
+import { IPFSStorage } from './ipfs-storage';
 
 export class EgendataClient {
   private storage: StorageAdapter;
@@ -43,14 +44,14 @@ export class EgendataClient {
 
   /**
    * Write encrypted data to storage
-   * Returns the encrypted data string for display
+   * Returns object with encrypted data string and CID (if using IPFS)
    */
   async writeData(
     dataId: string,
     data: object,
     owner: string,
     recipients: { name: string; publicKey: CryptoKey }[]
-  ): Promise<string> {
+  ): Promise<{ encryptedData: string; cid?: string }> {
     // Generate a symmetric Data Encryption Key (DEK)
     const dek = await crypto.subtle.generateKey(
       { name: 'AES-GCM', length: 256 },
@@ -109,8 +110,13 @@ export class EgendataClient {
 
     await this.storage.set(dataId, storedData);
     
-    // Returnera den krypterade datan för visning
-    return encryptedData;
+    // Hämta CID om det är IPFS storage
+    let cid: string | undefined;
+    if (this.storage instanceof IPFSStorage) {
+      cid = this.storage.getCID(dataId) || undefined;
+    }
+    
+    return { encryptedData, cid };
   }
 
   /**
@@ -120,6 +126,27 @@ export class EgendataClient {
     const storedData = await this.storage.get(dataId);
     return storedData?.encryptedData || null;
   }
+
+  /**
+   * Read data using CID (for IPFS)
+   */
+  async readDataByCID(
+    cid: string,
+    recipientName: string,
+    privateKey: CryptoKey
+  ): Promise<object> {
+    if (!(this.storage instanceof IPFSStorage)) {
+      throw new Error('CID-baserad läsning kräver IPFSStorage');
+    }
+
+    const storedData = await this.storage.getByCID(cid);
+    if (!storedData) {
+      throw new Error(`Data hittades inte för CID: ${cid}`);
+    }
+
+    return this.decryptStoredData(storedData, recipientName, privateKey);
+  }
+
   async readData(
     dataId: string,
     recipientName: string,
@@ -130,6 +157,17 @@ export class EgendataClient {
       throw new Error(`Data not found: ${dataId}`);
     }
 
+    return this.decryptStoredData(storedData, recipientName, privateKey);
+  }
+
+  /**
+   * Private helper för att dekryptera StoredData
+   */
+  private async decryptStoredData(
+    storedData: StoredData,
+    recipientName: string,
+    privateKey: CryptoKey
+  ): Promise<object> {
     // Find the encrypted DEK for this recipient
     const recipientKey = storedData.keystone.recipients.find(r => r.name === recipientName);
     if (!recipientKey) {

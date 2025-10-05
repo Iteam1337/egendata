@@ -13,13 +13,15 @@ export interface QRKeyData {
     e: string;    // exponent
   };
   t: number;      // timestamp
+  c?: string;     // CID (optional - för IPFS delning)
 }
 
 /**
  * Konverterar en publik nyckel till QR-kod-format (CBOR + Base45)
  * Base45 är optimerat för QR-kodens alphanumeric mode
+ * Kan inkludera CID för IPFS-delning
  */
-export function encodeKeyForQR(name: string, publicKeyJWK: any): string {
+export function encodeKeyForQR(name: string, publicKeyJWK: any, cid?: string): string {
   const keyData: QRKeyData = {
     n: name,
     k: {
@@ -30,6 +32,11 @@ export function encodeKeyForQR(name: string, publicKeyJWK: any): string {
     t: Date.now()
   };
   
+  // Lägg till CID om det finns
+  if (cid) {
+    keyData.c = cid;
+  }
+  
   const cborData = cborEncode(keyData);
   const uint8Array = cborData instanceof Uint8Array ? cborData : new Uint8Array(cborData);
   return base45.encode(uint8Array);
@@ -37,9 +44,10 @@ export function encodeKeyForQR(name: string, publicKeyJWK: any): string {
 
 /**
  * Konverterar en publik nyckel till copy/paste-format (samma som QR)
+ * Kan inkludera CID för IPFS-delning
  */
-export function encodeKeyForCopy(name: string, publicKeyJWK: any): string {
-  return encodeKeyForQR(name, publicKeyJWK);
+export function encodeKeyForCopy(name: string, publicKeyJWK: any, cid?: string): string {
+  return encodeKeyForQR(name, publicKeyJWK, cid);
 }
 
 /**
