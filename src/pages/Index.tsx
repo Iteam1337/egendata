@@ -332,104 +332,10 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Main Content - Two Column Layout */}
+      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className={step >= 2 ? "grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8" : ""}>
-          
-          {/* Sidebar - Actor Cards (visible from step 2) */}
-          {step >= 2 && (
-            <aside className="space-y-6">
-              <div className="sticky top-24 space-y-4">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Aktörer</h3>
-                
-                {/* Alice Compact */}
-                <ActorCard name="Alice" role="Data Owner" status="active">
-                  <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
-                    📖 Läs
-                  </Button>
-                  {aliceDecrypted && (
-                    <div className="mt-2 p-2 bg-success/10 border border-success/30 rounded text-xs text-success">
-                      ✓ Dekryptering lyckades
-                    </div>
-                  )}
-                </ActorCard>
-
-                {/* Bob Compact */}
-                <ActorCard name="Bob" role="Recipient" status={bobRevoked ? "revoked" : (bobDecrypted ? "success" : "default")}>
-                  <div className="space-y-2">
-                    <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
-                      📖 Läs
-                    </Button>
-                    
-                    {!bobRevoked ? (
-                      <Button onClick={handleRevokeBob} variant="destructive" size="sm" className="w-full">
-                        🚫 Återkalla
-                      </Button>
-                    ) : (
-                      <div className="flex gap-2">
-                        <Button onClick={handleGenerateBobQR} variant="outline" size="sm" className="flex-1">
-                          <QrCode className="w-3 h-3" />
-                        </Button>
-                        <Button onClick={() => { setScanningFor('Bob'); setShowScanner(true); }} variant="default" size="sm" className="flex-1">
-                          <ScanLine className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    )}
-                    
-                    {bobDecrypted && !bobRevoked && (
-                      <div className="p-2 bg-success/10 border border-success/30 rounded text-xs text-success">
-                        ✓ Dekryptering lyckades
-                      </div>
-                    )}
-                    {bobRevoked && (
-                      <div className="p-2 bg-destructive/10 border border-destructive/30 rounded text-xs text-destructive">
-                        ✗ Åtkomst återkallad
-                      </div>
-                    )}
-                  </div>
-                </ActorCard>
-
-                {/* Charlie Compact */}
-                <ActorCard name="Charlie" role="Recipient" status={charlieRevoked ? "revoked" : (charlieDecrypted ? "success" : "default")}>
-                  <div className="space-y-2">
-                    <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
-                      📖 Läs
-                    </Button>
-                    
-                    {!charlieRevoked ? (
-                      <Button onClick={handleRevokeCharlie} variant="destructive" size="sm" className="w-full">
-                        🚫 Återkalla
-                      </Button>
-                    ) : (
-                      <div className="flex gap-2">
-                        <Button onClick={handleGenerateCharlieQR} variant="outline" size="sm" className="flex-1">
-                          <QrCode className="w-3 h-3" />
-                        </Button>
-                        <Button onClick={() => { setScanningFor('Charlie'); setShowScanner(true); }} variant="default" size="sm" className="flex-1">
-                          <ScanLine className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    )}
-                    
-                    {charlieDecrypted && !charlieRevoked && (
-                      <div className="p-2 bg-success/10 border border-success/30 rounded text-xs text-success">
-                        ✓ Dekryptering lyckades
-                      </div>
-                    )}
-                    {charlieRevoked && (
-                      <div className="p-2 bg-destructive/10 border border-destructive/30 rounded text-xs text-destructive">
-                        ✗ Åtkomst återkallad
-                      </div>
-                    )}
-                  </div>
-                </ActorCard>
-              </div>
-            </aside>
-          )}
-
-          {/* Main Content Area */}
-          <main className="space-y-8">
-            <StepIndicator steps={steps} currentStep={step} />
+        <div className="space-y-8">
+          <StepIndicator steps={steps} currentStep={step} />
 
         {/* Step 0: Introduction */}
         {step === 0 && (
@@ -837,7 +743,6 @@ const Index = () => {
             </div>
           </div>
         )}
-          </main>
         </div>
       </div>
     </div>
