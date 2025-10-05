@@ -41,31 +41,39 @@ export const QRKeyDisplay = ({ qrData, userName }: QRKeyDisplayProps) => {
         />
       </div>
       
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Format:</span>
           <code className="text-xs bg-muted px-2 py-1 rounded">KEY1:...</code>
         </div>
         
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleCopy}
-            className="w-full"
-          >
-            {copied ? (
-              <>
-                <Check className="w-4 h-4 mr-2" />
-                Kopierad!
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4 mr-2" />
-                Kopiera data
-              </>
-            )}
-          </Button>
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground">
+            Eller kopiera nyckeldatan:
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={qrData}
+              readOnly
+              className="flex-1 px-3 py-2 text-xs font-mono bg-muted border border-border rounded-md"
+            />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleCopy}
+              className="shrink-0"
+            >
+              {copied ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Dela via QR-kod eller kopiera texten
+          </p>
         </div>
       </div>
     </Card>
