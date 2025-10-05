@@ -19,9 +19,13 @@ export class IPFSStorage implements StorageAdapter {
    * Initialiserar Helia node
    */
   async initialize(): Promise<void> {
-    if (this.isInitialized) return;
+    if (this.isInitialized) {
+      console.log('✅ IPFS redan initialiserad');
+      return;
+    }
     
     if (this.initPromise) {
+      console.log('⏳ Väntar på pågående initialisering...');
       return this.initPromise;
     }
 
@@ -29,11 +33,21 @@ export class IPFSStorage implements StorageAdapter {
       try {
         console.log('🚀 Startar Helia node...');
         this.node = await createHelia();
+        console.log('✅ Helia node skapad, initierar JSON store...');
+        
         this.jsonStore = json(this.node);
+        console.log('✅ JSON store skapad');
+        
         this.isInitialized = true;
-        console.log('✅ Helia node redo!');
+        console.log('✅ Helia node redo!', { 
+          hasNode: !!this.node, 
+          hasJsonStore: !!this.jsonStore 
+        });
       } catch (error) {
         console.error('❌ Fel vid initialisering av Helia:', error);
+        this.isInitialized = false;
+        this.node = null;
+        this.jsonStore = null;
         throw error;
       }
     })();
@@ -47,11 +61,12 @@ export class IPFSStorage implements StorageAdapter {
   async set(key: string, data: StoredData): Promise<void> {
     await this.ensureInitialized();
     
-    if (!this.jsonStore) {
-      throw new Error('IPFS JSON store inte initialiserad');
+    if (!this.jsonStore || !this.node) {
+      throw new Error(`IPFS är inte korrekt initialiserad. Node: ${!!this.node}, JsonStore: ${!!this.jsonStore}`);
     }
 
     try {
+      console.log(`📦 Lagrar data med key: ${key}`);
       // Lagra data i IPFS och få tillbaka CID
       const cid = await this.jsonStore.add(data);
       this.cidMap.set(key, cid);
