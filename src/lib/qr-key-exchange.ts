@@ -2,7 +2,7 @@ import { encode as cborEncode, decode as cborDecode } from 'cbor-x';
 import baseX from 'base-x';
 
 // Base45 alphabet (för QR-koder - optimerat för alphanumeric mode)
-const BASE45_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
+const BASE45_ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ=$%*+-./:';
 const base45 = baseX(BASE45_ALPHABET);
 
 export interface QRKeyData {
