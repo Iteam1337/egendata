@@ -29,12 +29,15 @@ const Index = () => {
   const [charlieDecrypted, setCharlieDecrypted] = useState<object | null>(null);
   const [aliceDecrypted, setAliceDecrypted] = useState<object | null>(null);
   const [bobRevoked, setBobRevoked] = useState(false);
+  const [charlieRevoked, setCharlieRevoked] = useState(false);
   
   // QR code states
   const [showBobQR, setShowBobQR] = useState(false);
+  const [showCharlieQR, setShowCharlieQR] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [scanningFor, setScanningFor] = useState<'Bob' | 'Charlie' | null>(null);
   const [bobQRData, setBobQRData] = useState<string>("");
-  const [bobReGranted, setBobReGranted] = useState(false);
+  const [charlieQRData, setCharlieQRData] = useState<string>("");
 
   const DATA_ID = "alice-sensitive-data";
   const steps = ["Setup", "Encrypt", "Test Access Control"];
@@ -99,11 +102,29 @@ const Index = () => {
       await egendata.revokeAccess(DATA_ID, "Bob");
       setBobRevoked(true);
       setBobDecrypted(null);
-      setBobReGranted(false);
       
       toast({
         title: "Åtkomst återkallad!",
         description: "Bob kan inte längre dekryptera datan",
+      });
+    } catch (error) {
+      toast({
+        title: "Fel",
+        description: "Kunde inte återkalla åtkomst",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRevokeCharlie = async () => {
+    try {
+      await egendata.revokeAccess(DATA_ID, "Charlie");
+      setCharlieRevoked(true);
+      setCharlieDecrypted(null);
+      
+      toast({
+        title: "Åtkomst återkallad!",
+        description: "Charlie kan inte längre dekryptera datan",
       });
     } catch (error) {
       toast({
@@ -124,6 +145,19 @@ const Index = () => {
     toast({
       title: "QR-kod genererad!",
       description: "Bob kan nu dela sin nyckel via QR-kod",
+    });
+  };
+
+  const handleGenerateCharlieQR = () => {
+    if (!charlie) return;
+    
+    const qrData = encodeKeyForQR("Charlie", charlie.publicKeyJWK);
+    setCharlieQRData(qrData);
+    setShowCharlieQR(true);
+    
+    toast({
+      title: "QR-kod genererad!",
+      description: "Charlie kan nu dela sin nyckel via QR-kod",
     });
   };
 
@@ -206,15 +240,6 @@ const Index = () => {
       
       const { name, publicKeyJWK } = qrKeyDataToJWK(keyData);
       
-      if (name !== "Bob") {
-        toast({
-          title: "Fel användare",
-          description: `QR-koden tillhör ${name}, inte Bob`,
-          variant: "destructive",
-        });
-        return;
-      }
-      
       if (!alice) {
         toast({
           title: "Fel",
@@ -224,21 +249,26 @@ const Index = () => {
         return;
       }
       
-      const bobPublicKey = await egendata.importPublicKey(publicKeyJWK);
+      const recipientPublicKey = await egendata.importPublicKey(publicKeyJWK);
       
       await egendata.reGrantAccess(
         DATA_ID,
-        "Bob",
-        bobPublicKey,
+        name,
+        recipientPublicKey,
         alice.privateKey
       );
       
-      setBobReGranted(true);
-      setBobRevoked(false);
+      if (name === "Bob") {
+        setBobRevoked(false);
+      } else if (name === "Charlie") {
+        setCharlieRevoked(false);
+      }
+      
+      setScanningFor(null);
       
       toast({
         title: "Åtkomst återställd!",
-        description: "Bob har nu åtkomst till datan igen via QR-kod",
+        description: `${name} har nu åtkomst till datan igen via QR-kod`,
       });
     } catch (error) {
       console.error('QR scan error:', error);
@@ -420,7 +450,10 @@ const Index = () => {
                           QR-kod
                         </Button>
                         <Button 
-                          onClick={() => setShowScanner(true)} 
+                          onClick={() => {
+                            setScanningFor('Bob');
+                            setShowScanner(true);
+                          }} 
                           variant="default"
                           size="sm" 
                           className="flex-1"
@@ -432,7 +465,7 @@ const Index = () => {
                     )}
                   </div>
 
-                  {bobRevoked && !showBobQR && !showScanner && (
+                  {bobRevoked && !showBobQR && !(showScanner && scanningFor === 'Bob') && (
                     <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
                       <p className="text-sm text-destructive font-medium">
                         ✗ Åtkomst återkallad
@@ -457,11 +490,14 @@ const Index = () => {
                     </div>
                   )}
                   
-                  {showScanner && (
+                  {showScanner && scanningFor === 'Bob' && (
                     <div className="space-y-2">
                       <QRKeyScanner 
                         onScan={handleScanQR}
-                        onClose={() => setShowScanner(false)}
+                        onClose={() => {
+                          setShowScanner(false);
+                          setScanningFor(null);
+                        }}
                       />
                     </div>
                   )}
@@ -477,11 +513,86 @@ const Index = () => {
               </ActorCard>
 
               {/* Charlie */}
-              <ActorCard name="Charlie" role="Recipient" status={charlieDecrypted ? "success" : "default"} align="left">
+              <ActorCard name="Charlie" role="Recipient" status={charlieRevoked ? "revoked" : (charlieDecrypted ? "success" : "default")} align="left">
                 <div className="space-y-4">
                   <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
                     📖 Läs som Charlie
                   </Button>
+                  
+                  <div className="flex gap-2">
+                    {!charlieRevoked ? (
+                      <Button 
+                        onClick={handleRevokeCharlie} 
+                        variant="destructive" 
+                        size="sm" 
+                        className="flex-1"
+                      >
+                        🚫 Återkalla
+                      </Button>
+                    ) : (
+                      <>
+                        <Button 
+                          onClick={handleGenerateCharlieQR} 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                        >
+                          <QrCode className="w-4 h-4 mr-2" />
+                          QR-kod
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            setScanningFor('Charlie');
+                            setShowScanner(true);
+                          }} 
+                          variant="default"
+                          size="sm" 
+                          className="flex-1"
+                        >
+                          <ScanLine className="w-4 h-4 mr-2" />
+                          Återge
+                        </Button>
+                      </>
+                    )}
+                  </div>
+
+                  {charlieRevoked && !showCharlieQR && !(showScanner && scanningFor === 'Charlie') && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+                      <p className="text-sm text-destructive font-medium">
+                        ✗ Åtkomst återkallad
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Dela QR-kod och scanna för att återge
+                      </p>
+                    </div>
+                  )}
+
+                  {showCharlieQR && (
+                    <div className="space-y-2">
+                      <QRKeyDisplay qrData={charlieQRData} userName="Charlie" publicKeyJWK={charlie!.publicKeyJWK} />
+                      <Button 
+                        onClick={() => setShowCharlieQR(false)} 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full"
+                      >
+                        Stäng QR
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {showScanner && scanningFor === 'Charlie' && (
+                    <div className="space-y-2">
+                      <QRKeyScanner 
+                        onScan={handleScanQR}
+                        onClose={() => {
+                          setShowScanner(false);
+                          setScanningFor(null);
+                        }}
+                      />
+                    </div>
+                  )}
+
                   {charlieDecrypted && (
                     <DataDisplay
                       title="Charlie läser data"
@@ -501,9 +612,11 @@ const Index = () => {
                 setBobDecrypted(null);
                 setCharlieDecrypted(null);
                 setBobRevoked(false);
-                setBobReGranted(false);
+                setCharlieRevoked(false);
                 setShowBobQR(false);
+                setShowCharlieQR(false);
                 setShowScanner(false);
+                setScanningFor(null);
               }}>
                 Börja om
               </Button>
