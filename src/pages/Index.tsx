@@ -7,7 +7,7 @@ import { StepIndicator } from "@/components/StepIndicator";
 import { QRKeyDisplay } from "@/components/QRKeyDisplay";
 import { QRKeyScanner } from "@/components/QRKeyScanner";
 import { EgendataClient, type KeyPair } from "@/lib/egendata";
-import { encodeKeyForQR, decodeKeyFromQR, validateKeyData } from "@/lib/qr-key-exchange";
+import { encodeKeyForQR, decodeKeyFromQR, validateKeyData, qrKeyDataToJWK } from "@/lib/qr-key-exchange";
 import { Shield, PlayCircle, UserX, QrCode, ScanLine, UserPlus } from "lucide-react";
 
 const Index = () => {
@@ -205,10 +205,13 @@ const Index = () => {
         return;
       }
       
-      if (keyData.name !== "Bob") {
+      // Konvertera tillbaka till full JWK-format
+      const { name, publicKeyJWK } = qrKeyDataToJWK(keyData);
+      
+      if (name !== "Bob") {
         toast({
           title: "Fel användare",
-          description: `QR-koden tillhör ${keyData.name}, inte Bob`,
+          description: `QR-koden tillhör ${name}, inte Bob`,
           variant: "destructive",
         });
         return;
@@ -224,7 +227,7 @@ const Index = () => {
       }
       
       // Import Bob's public key from JWK
-      const bobPublicKey = await egendata.importPublicKey(keyData.publicKeyJWK);
+      const bobPublicKey = await egendata.importPublicKey(publicKeyJWK);
       
       // Re-grant access to Bob
       await egendata.reGrantAccess(
