@@ -31,24 +31,38 @@ export async function encryptWithSharedAccess(
   data: object,
   recipients: { name: string; publicKey: CryptoKey }[]
 ): Promise<{ encryptedData: string; keystone: Keystone }> {
-  // Generate a Data Encryption Key (DEK)
-  const dek = await jose.generateSecret('A256GCM');
+  // Generate a symmetric Data Encryption Key (DEK) using Web Crypto API
+  const dek = await crypto.subtle.generateKey(
+    { name: 'AES-GCM', length: 256 },
+    true,
+    ['encrypt', 'decrypt']
+  );
   
-  // Encrypt the actual data with the DEK
-  const jwe = await new jose.CompactEncrypt(
-    new TextEncoder().encode(JSON.stringify(data))
-  )
-    .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
-    .encrypt(dek);
+  // Generate a random IV for AES-GCM
+  const iv = crypto.getRandomValues(new Uint8Array(12));
   
-  // Export DEK to encrypt it for each recipient
-  const dekJWK = await jose.exportJWK(dek);
+  // Encrypt the actual data with the DEK using AES-GCM
+  const encodedData = new TextEncoder().encode(JSON.stringify(data));
+  const encryptedDataBuffer = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    dek,
+    encodedData
+  );
   
-  // Encrypt the DEK for each recipient
+  // Combine IV and encrypted data, then base64 encode
+  const combined = new Uint8Array(iv.length + encryptedDataBuffer.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(encryptedDataBuffer), iv.length);
+  const encryptedData = btoa(String.fromCharCode(...combined));
+  
+  // Export DEK to raw format for encryption
+  const dekRaw = await crypto.subtle.exportKey('raw', dek);
+  
+  // Encrypt the DEK for each recipient using jose
   const recipientKeys = await Promise.all(
     recipients.map(async (recipient) => {
       const encryptedDEK = await new jose.CompactEncrypt(
-        new TextEncoder().encode(JSON.stringify(dekJWK))
+        new Uint8Array(dekRaw)
       )
         .setProtectedHeader({ alg: 'RSA-OAEP-256', enc: 'A256GCM' })
         .encrypt(recipient.publicKey);
@@ -61,7 +75,7 @@ export async function encryptWithSharedAccess(
   );
   
   return {
-    encryptedData: jwe,
+    encryptedData,
     keystone: {
       encryptedKey: 'keystone-v1',
       recipients: recipientKeys
@@ -83,18 +97,36 @@ export async function decryptData(
   }
   
   // Decrypt the DEK using the recipient's private key
-  const { plaintext: dekData } = await jose.compactDecrypt(
+  const { plaintext: dekRaw } = await jose.compactDecrypt(
     recipientKey.encryptedDEK,
     privateKey
   );
   
-  const dekJWK = JSON.parse(new TextDecoder().decode(dekData));
-  const dek = await jose.importJWK(dekJWK, 'A256GCM');
+  // Import the DEK
+  const dek = await crypto.subtle.importKey(
+    'raw',
+    dekRaw,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  );
+  
+  // Decode the base64 encrypted data
+  const combined = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
+  
+  // Extract IV (first 12 bytes) and encrypted data
+  const iv = combined.slice(0, 12);
+  const encryptedDataBuffer = combined.slice(12);
   
   // Decrypt the actual data using the DEK
-  const { plaintext } = await jose.compactDecrypt(encryptedData, dek);
+  const decryptedBuffer = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    dek,
+    encryptedDataBuffer
+  );
   
-  return JSON.parse(new TextDecoder().decode(plaintext));
+  const decryptedText = new TextDecoder().decode(decryptedBuffer);
+  return JSON.parse(decryptedText);
 }
 
 // Revoke access by removing a recipient from the keystone
