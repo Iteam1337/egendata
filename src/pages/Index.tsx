@@ -468,43 +468,49 @@ const Index = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <ActorCard name="Alice" role="Data Owner" status="active">
-                <div className="space-y-4">
-                  <DataDisplay
-                    title="Känslig information"
-                    data={JSON.stringify(originalData, null, 2)}
-                    variant="original"
-                  />
-                  <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
-                    📖 Läs som Alice
-                  </Button>
-                  {aliceDecrypted && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Alice - Vänster */}
+              <div className="space-y-4">
+                <ActorCard name="Alice" role="Data Owner" status="active">
+                  <div className="space-y-4">
                     <DataDisplay
-                      title="Alice läser sin egen data"
-                      data={JSON.stringify(aliceDecrypted, null, 2)}
-                      variant="decrypted"
+                      title="Känslig information"
+                      data={JSON.stringify(originalData, null, 2)}
+                      variant="original"
                     />
-                  )}
-                </div>
-              </ActorCard>
+                    <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
+                      📖 Läs min data
+                    </Button>
+                    {aliceDecrypted && (
+                      <DataDisplay
+                        title="Alice läser sin egen data"
+                        data={JSON.stringify(aliceDecrypted, null, 2)}
+                        variant="decrypted"
+                      />
+                    )}
+                    
+                    <div className="pt-4 border-t">
+                      <Button onClick={handleShareWithBob} size="lg" className="w-full">
+                        Dela med Bob <ArrowRight className="w-5 h-5 ml-2" />
+                      </Button>
+                    </div>
+                  </div>
+                </ActorCard>
+              </div>
 
-              <div className="flex items-center justify-center">
-                <DataDisplay
-                  title="Krypterad data (Base64)"
-                  data={encryptedData.substring(0, 150) + "..."}
-                  isEncrypted
-                  variant="encrypted"
-                />
+              {/* Bob - Höger */}
+              <div className="space-y-4">
+                <ActorCard name="Bob" role="Mottagare" status="default">
+                  <div className="p-4 text-center text-muted-foreground text-sm">
+                    Väntar på åtkomst från Alice...
+                  </div>
+                </ActorCard>
               </div>
             </div>
 
             <div className="flex gap-4">
               <Button variant="outline" onClick={() => setStep(0)}>
                 Tillbaka
-              </Button>
-              <Button onClick={handleShareWithBob} size="lg" className="flex-1">
-                Dela med Bob <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
           </div>
@@ -516,44 +522,56 @@ const Index = () => {
             <div className="space-y-4">
               <h2 className="text-4xl font-bold">Bob får åtkomst</h2>
               <p className="text-lg text-muted-foreground">
-                Alice har delat ut en nyckel till Bob. Nu kan Bob läsa Alices data.
+                Alice har delat ut en nyckel till Bob från sitt kort. Nu kan Bob läsa Alices data.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <ActorCard name="Alice" role="Data Owner" status="active">
-                <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
-                  📖 Läs som Alice
-                </Button>
-                {aliceDecrypted && (
-                  <div className="mt-2 p-2 bg-success/10 border border-success/30 rounded text-xs text-success">
-                    ✓ Alice kan alltid läsa sin data
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Alice - Vänster */}
+              <div className="space-y-4">
+                <ActorCard name="Alice" role="Data Owner" status="active">
+                  <div className="space-y-4">
+                    <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
+                      📖 Läs min data
+                    </Button>
+                    {aliceDecrypted && (
+                      <div className="p-2 bg-success/10 border border-success/30 rounded text-xs text-success">
+                        ✓ Alice kan alltid läsa sin data
+                      </div>
+                    )}
+                    
+                    <div className="pt-4 border-t">
+                      <p className="text-xs text-muted-foreground mb-2">Dela med fler:</p>
+                      <Button onClick={handleShareWithCharlie} size="lg" className="w-full">
+                        Dela med Charlie <ArrowRight className="w-5 h-5 ml-2" />
+                      </Button>
+                    </div>
                   </div>
-                )}
-              </ActorCard>
+                </ActorCard>
+              </div>
 
-              <ActorCard name="Bob" role="Mottagare" status={bobDecrypted ? "success" : "default"}>
-                <div className="space-y-4">
-                  <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
-                    📖 Läs som Bob
-                  </Button>
-                  {bobDecrypted && (
-                    <DataDisplay
-                      title="Bob läser data"
-                      data={JSON.stringify(bobDecrypted, null, 2)}
-                      variant="decrypted"
-                    />
-                  )}
-                </div>
-              </ActorCard>
+              {/* Bob - Höger */}
+              <div className="space-y-4">
+                <ActorCard name="Bob" role="Mottagare" status={bobDecrypted ? "success" : "default"}>
+                  <div className="space-y-4">
+                    <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
+                      📖 Läs Alices data
+                    </Button>
+                    {bobDecrypted && (
+                      <DataDisplay
+                        title="Bob läser data"
+                        data={JSON.stringify(bobDecrypted, null, 2)}
+                        variant="decrypted"
+                      />
+                    )}
+                  </div>
+                </ActorCard>
+              </div>
             </div>
 
             <div className="flex gap-4">
               <Button variant="outline" onClick={() => setStep(1)}>
                 Tillbaka
-              </Button>
-              <Button onClick={handleShareWithCharlie} size="lg" className="flex-1">
-                Dela även med Charlie <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
           </div>
@@ -565,45 +583,57 @@ const Index = () => {
             <div className="space-y-4">
               <h2 className="text-4xl font-bold">Charlie får också åtkomst</h2>
               <p className="text-lg text-muted-foreground">
-                Alice har nu delat sin data med både Bob och Charlie. Båda kan läsa datan.
+                Alice har nu delat sin data med både Bob och Charlie från sitt eget kort. Båda kan läsa datan.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <ActorCard name="Alice" role="Data Owner" status="active">
-                <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
-                  📖 Läs
-                </Button>
-              </ActorCard>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Alice - Vänster */}
+              <div className="space-y-4">
+                <ActorCard name="Alice" role="Data Owner" status="active">
+                  <div className="space-y-4">
+                    <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
+                      📖 Läs min data
+                    </Button>
+                    
+                    <div className="pt-4 border-t">
+                      <p className="text-xs text-muted-foreground mb-2">Hantera åtkomst:</p>
+                      <Button onClick={handleRevokeBob} variant="destructive" size="lg" className="w-full">
+                        🚫 Återkalla Bob <ArrowRight className="w-5 h-5 ml-2" />
+                      </Button>
+                    </div>
+                  </div>
+                </ActorCard>
+              </div>
 
-              <ActorCard name="Bob" role="Mottagare" status={bobDecrypted ? "success" : "default"}>
-                <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
-                  📖 Läs
-                </Button>
-              </ActorCard>
-
-              <ActorCard name="Charlie" role="Mottagare" status={charlieDecrypted ? "success" : "default"}>
-                <div className="space-y-4">
-                  <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
-                    📖 Läs
+              {/* Bob & Charlie - Höger */}
+              <div className="space-y-4">
+                <ActorCard name="Bob" role="Mottagare" status={bobDecrypted ? "success" : "default"}>
+                  <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
+                    📖 Läs Alices data
                   </Button>
-                  {charlieDecrypted && (
-                    <DataDisplay
-                      title="Charlie läser data"
-                      data={JSON.stringify(charlieDecrypted, null, 2)}
-                      variant="decrypted"
-                    />
-                  )}
-                </div>
-              </ActorCard>
+                </ActorCard>
+
+                <ActorCard name="Charlie" role="Mottagare" status={charlieDecrypted ? "success" : "default"}>
+                  <div className="space-y-4">
+                    <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
+                      📖 Läs Alices data
+                    </Button>
+                    {charlieDecrypted && (
+                      <DataDisplay
+                        title="Charlie läser data"
+                        data={JSON.stringify(charlieDecrypted, null, 2)}
+                        variant="decrypted"
+                      />
+                    )}
+                  </div>
+                </ActorCard>
+              </div>
             </div>
 
             <div className="flex gap-4">
               <Button variant="outline" onClick={() => setStep(2)}>
                 Tillbaka
-              </Button>
-              <Button onClick={handleRevokeBob} variant="destructive" size="lg" className="flex-1">
-                Alice ångrar sig - återkalla Bob <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
           </div>
@@ -615,88 +645,119 @@ const Index = () => {
             <div className="space-y-4">
               <h2 className="text-4xl font-bold">Alice ångrar sig</h2>
               <p className="text-lg text-muted-foreground">
-                Alice har återkallat Bobs åtkomst. Bob kan inte längre läsa datan, men Charlie kan fortfarande.
+                Alice har återkallat Bobs åtkomst från sitt kort. Bob kan inte längre läsa datan.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <ActorCard name="Alice" role="Data Owner" status="active">
-                <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
-                  📖 Läs
-                </Button>
-              </ActorCard>
-
-              <ActorCard name="Bob" role="Mottagare" status="revoked">
-                <div className="space-y-2">
-                  <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
-                    📖 Försök läs
-                  </Button>
-                  <p className="text-xs text-destructive">⚠️ Åtkomst återkallad</p>
-                </div>
-              </ActorCard>
-
-              <ActorCard name="Charlie" role="Mottagare" status={charlieDecrypted ? "success" : "default"}>
-                <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
-                  📖 Läs
-                </Button>
-              </ActorCard>
-            </div>
-
-            <Card className="p-6 bg-muted/30">
-              <h3 className="font-semibold mb-4">Nästa steg: Ge Bob nytt försök</h3>
-              <p className="text-muted-foreground mb-4">
-                Efter någon månad bestämmer sig Alice för att ge Bob ett nytt försök. 
-                Bob skapar en QR-kod med sin publika nyckel som Alice kan scanna.
-              </p>
-              <div className="flex gap-4">
-                <Button onClick={handleGenerateBobQR} variant="default" size="lg" className="flex-1">
-                  <QrCode className="w-4 h-4 mr-2" />
-                  Bob: Generera QR-kod
-                </Button>
-              </div>
-            </Card>
-
-            {showBobQR && (
-              <Card className="p-6 bg-primary/5 border-primary">
-                <div className="space-y-4">
-                  <h3 className="font-semibold">Bobs QR-kod</h3>
-                  <QRKeyDisplay qrData={bobQRData} userName="Bob" publicKeyJWK={bob!.publicKeyJWK} />
-                  <Button 
-                    onClick={() => {
-                      setScanningFor('Bob');
-                      setShowScanner(true);
-                      setShowBobQR(false);
-                    }}
-                    variant="default"
-                    size="lg"
-                    className="w-full"
-                  >
-                    <ScanLine className="w-4 h-4 mr-2" />
-                    Alice: Scanna Bobs QR-kod
-                  </Button>
-                </div>
-              </Card>
-            )}
-
-            {showScanner && scanningFor === 'Bob' && (
-              <Card className="p-6 bg-primary/5 border-primary">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Alice scannar Bobs QR-kod</h3>
-                    <Button onClick={() => { setShowScanner(false); setScanningFor(null); }} variant="ghost" size="sm">
-                      Avbryt
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Alice - Vänster */}
+              <div className="space-y-4">
+                <ActorCard name="Alice" role="Data Owner" status="active">
+                  <div className="space-y-4">
+                    <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
+                      📖 Läs min data
                     </Button>
+                    
+                    <div className="pt-4 border-t">
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Väntar på Bobs nyckel för att ge honom nytt försök...
+                      </p>
+                      {showScanner && scanningFor === 'Bob' && (
+                        <Card className="p-4 bg-primary/5 border-primary">
+                          <div className="space-y-4">
+                            <p className="text-sm font-medium">Scanna Bobs QR-kod</p>
+                            <QRKeyScanner 
+                              onScan={handleScanQR}
+                              onClose={() => {
+                                setShowScanner(false);
+                                setScanningFor(null);
+                              }}
+                            />
+                            <Button 
+                              onClick={() => { 
+                                setShowScanner(false); 
+                                setScanningFor(null); 
+                              }} 
+                              variant="ghost" 
+                              size="sm" 
+                              className="w-full"
+                            >
+                              Avbryt
+                            </Button>
+                          </div>
+                        </Card>
+                      )}
+                      
+                      {!showScanner && (
+                        <Button 
+                          onClick={() => {
+                            setScanningFor('Bob');
+                            setShowScanner(true);
+                          }}
+                          variant="default"
+                          size="lg"
+                          className="w-full"
+                        >
+                          <ScanLine className="w-4 h-4 mr-2" />
+                          Ta emot Bobs nyckel
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <QRKeyScanner 
-                    onScan={handleScanQR}
-                    onClose={() => {
-                      setShowScanner(false);
-                      setScanningFor(null);
-                    }}
-                  />
-                </div>
-              </Card>
-            )}
+                </ActorCard>
+              </div>
+
+              {/* Bob & Charlie - Höger */}
+              <div className="space-y-4">
+                <ActorCard name="Bob" role="Mottagare" status="revoked">
+                  <div className="space-y-4">
+                    <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
+                      📖 Försök läs Alices data
+                    </Button>
+                    <div className="p-3 bg-destructive/10 border border-destructive/30 rounded">
+                      <p className="text-xs text-destructive font-medium">⚠️ Åtkomst återkallad</p>
+                    </div>
+                    
+                    <div className="pt-4 border-t">
+                      <p className="text-xs text-muted-foreground mb-2">Begär ny åtkomst:</p>
+                      <Button 
+                        onClick={handleGenerateBobQR} 
+                        variant="default"
+                        size="lg"
+                        className="w-full"
+                      >
+                        <QrCode className="w-4 h-4 mr-2" />
+                        Skapa QR-kod med min nyckel
+                      </Button>
+                    </div>
+                    
+                    {showBobQR && (
+                      <div className="mt-4 p-4 bg-primary/5 border-primary rounded">
+                        <p className="text-xs font-medium mb-3">Bobs QR-kod - visa för Alice</p>
+                        <QRKeyDisplay qrData={bobQRData} userName="Bob" publicKeyJWK={bob!.publicKeyJWK} />
+                        <Button 
+                          onClick={() => setShowBobQR(false)} 
+                          variant="ghost" 
+                          size="sm" 
+                          className="w-full mt-2"
+                        >
+                          Stäng
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </ActorCard>
+
+                <ActorCard name="Charlie" role="Mottagare" status={charlieDecrypted ? "success" : "default"}>
+                  <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
+                    📖 Läs Alices data
+                  </Button>
+                  <div className="mt-2 p-2 bg-success/10 border border-success/30 rounded text-xs text-success">
+                    ✓ Har fortfarande åtkomst
+                  </div>
+                </ActorCard>
+              </div>
+            </div>
 
             <div className="flex gap-4">
               <Button variant="outline" onClick={() => setStep(3)}>
