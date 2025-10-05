@@ -5,7 +5,6 @@ import { QrCode, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { encodeKeyForCopy } from '@/lib/qr-key-exchange';
 
 interface QRKeyDisplayProps {
   qrData: string;
@@ -36,7 +35,7 @@ export const QRKeyDisplay = ({ qrData, userName, publicKeyJWK }: QRKeyDisplayPro
       
       <div className="bg-white p-4 rounded-lg flex items-center justify-center mb-4">
         <QRCodeSVG 
-          value={qrData} 
+          value={qrData.toUpperCase()} 
           size={256}
           level="M"
           includeMargin={true}
