@@ -47,6 +47,11 @@ const Index = () => {
   const [scanningFor, setScanningFor] = useState<'Bob' | 'Charlie' | null>(null);
   const [bobQRData, setBobQRData] = useState<string>("");
   const [charlieQRData, setCharlieQRData] = useState<string>("");
+  
+  // Avancerade funktioner
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [newRecipientName, setNewRecipientName] = useState("");
+  const [customRecipients, setCustomRecipients] = useState<Array<{ name: string; keyPair: KeyPair }>>([]);
 
   const DATA_ID = "alice-sensitive-data";
   const steps = ["Alice har data", "Dela med Bob", "Dela med Charlie", "Återkalla Bob", "Återge till Bob"];
@@ -378,6 +383,64 @@ const Index = () => {
     }
   };
 
+  const handleAddRecipient = async () => {
+    if (!newRecipientName.trim() || !alice) {
+      toast({
+        title: "Ogiltigt namn",
+        description: "Ange ett namn för den nya mottagaren",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Generera nyckelpar för ny mottagare
+      const newKeyPair = await egendata.generateKeyPair(newRecipientName);
+      
+      // Dela data med ny mottagare
+      await egendata.reGrantAccess(
+        DATA_ID,
+        newRecipientName,
+        newKeyPair.publicKey,
+        alice.privateKey
+      );
+      
+      // Lägg till i listan
+      setCustomRecipients([...customRecipients, { name: newRecipientName, keyPair: newKeyPair }]);
+      setNewRecipientName("");
+      
+      toast({
+        title: "Mottagare tillagd!",
+        description: `${newRecipientName} har nu åtkomst till datan`,
+      });
+    } catch (error) {
+      console.error('Add recipient error:', error);
+      toast({
+        title: "Fel",
+        description: "Kunde inte lägga till mottagare",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRevokeCustomRecipient = async (recipientName: string) => {
+    try {
+      await egendata.revokeAccess(DATA_ID, recipientName);
+      setCustomRecipients(customRecipients.filter(r => r.name !== recipientName));
+      
+      toast({
+        title: "Åtkomst återkallad",
+        description: `${recipientName} har inte längre åtkomst`,
+      });
+    } catch (error) {
+      toast({
+        title: "Fel",
+        description: "Kunde inte återkalla åtkomst",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -460,13 +523,6 @@ const Index = () => {
                       data={JSON.stringify(originalData, null, 2)}
                       variant="original"
                     />
-                    
-                    {dataCID && (
-                      <IPFSLink 
-                        cid={dataCID}
-                        title="Krypterad data i IPFS"
-                      />
-                    )}
                     
                     <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
                       📖 Läs min data
@@ -795,7 +851,124 @@ const Index = () => {
                       data={JSON.stringify(bobDecrypted, null, 2)}
                       variant="decrypted"
                     />
+        )}
+
+        {/* Avancerade funktioner - efter huvudberättelsen */}
+        {step >= 1 && (
+          <div className="animate-fade-in">
+            <Card className="p-6 bg-muted/20">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Avancerade funktioner</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                >
+                  {showAdvanced ? 'Dölj' : 'Visa'}
+                </Button>
+              </div>
+
+              {showAdvanced && (
+                <div className="space-y-6">
+                  {/* IPFS Explorer länkar */}
+                  {dataCID && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium text-muted-foreground">IPFS Data Explorer</h4>
+                      <IPFSLink 
+                        cid={dataCID}
+                        title="Krypterad data i IPFS"
+                      />
+                    </div>
                   )}
+
+                  {/* Lägg till fler mottagare */}
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                        Lägg till fler mottagare
+                      </h4>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Namn på ny mottagare..."
+                          value={newRecipientName}
+                          onChange={(e) => setNewRecipientName(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleAddRecipient()}
+                          className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background"
+                        />
+                        <Button onClick={handleAddRecipient} size="sm">
+                          Lägg till
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Lista över custom mottagare */}
+                    {customRecipients.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-muted-foreground">
+                          Ytterligare mottagare ({customRecipients.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {customRecipients.map((recipient) => (
+                            <Card key={recipient.name} className="p-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <span className="text-xs font-medium text-primary">
+                                      {recipient.name[0].toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <span className="text-sm font-medium">{recipient.name}</span>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRevokeCustomRecipient(recipient.name)}
+                                  className="text-xs text-destructive hover:text-destructive"
+                                >
+                                  Återkalla
+                                </Button>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Info om alla aktiva mottagare */}
+                    <div className="pt-4 border-t border-border">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                        Alla aktiva mottagare
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {alice && (
+                          <span className="px-2 py-1 text-xs bg-primary/10 text-primary rounded">
+                            Alice (Owner)
+                          </span>
+                        )}
+                        {!bobRevoked && bob && (
+                          <span className="px-2 py-1 text-xs bg-success/10 text-success rounded">
+                            Bob
+                          </span>
+                        )}
+                        {!charlieRevoked && charlie && (
+                          <span className="px-2 py-1 text-xs bg-success/10 text-success rounded">
+                            Charlie
+                          </span>
+                        )}
+                        {customRecipients.map((r) => (
+                          <span key={r.name} className="px-2 py-1 text-xs bg-success/10 text-success rounded">
+                            {r.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
                 </div>
               </ActorCard>
 
