@@ -107,9 +107,10 @@ const Index = () => {
         description: "Datan är krypterad och endast Alice kan läsa den",
       });
     } catch (error) {
+      console.error('❌ Fel vid nyckelgenerering:', error);
       toast({
         title: "Fel",
-        description: "Kunde inte generera nycklar",
+        description: error instanceof Error ? error.message : "Kunde inte generera nycklar",
         variant: "destructive",
       });
     }
