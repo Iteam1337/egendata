@@ -43,13 +43,14 @@ export class EgendataClient {
 
   /**
    * Write encrypted data to storage
+   * Returns the encrypted data string for display
    */
   async writeData(
     dataId: string,
     data: object,
     owner: string,
     recipients: { name: string; publicKey: CryptoKey }[]
-  ): Promise<void> {
+  ): Promise<string> {
     // Generate a symmetric Data Encryption Key (DEK)
     const dek = await crypto.subtle.generateKey(
       { name: 'AES-GCM', length: 256 },
@@ -107,11 +108,18 @@ export class EgendataClient {
     };
 
     await this.storage.set(dataId, storedData);
+    
+    // Returnera den krypterade datan för visning
+    return encryptedData;
   }
 
   /**
-   * Read and decrypt data from storage
+   * Get raw encrypted data for display purposes
    */
+  async getRawEncryptedData(dataId: string): Promise<string | null> {
+    const storedData = await this.storage.get(dataId);
+    return storedData?.encryptedData || null;
+  }
   async readData(
     dataId: string,
     recipientName: string,

@@ -67,7 +67,7 @@ const Index = () => {
     if (!alice || !bob || !charlie) return;
     
     try {
-      await egendata.writeData(
+      const encryptedDataStr = await egendata.writeData(
         DATA_ID,
         originalData,
         "Alice",
@@ -77,7 +77,7 @@ const Index = () => {
         ]
       );
       
-      setEncryptedData(DATA_ID);
+      setEncryptedData(encryptedDataStr);
       setStep(2);
       
       toast({
