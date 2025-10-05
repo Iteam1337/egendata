@@ -12,66 +12,55 @@ export class IPFSStorage implements StorageAdapter {
   private node: Helia | null = null;
   private jsonStore: HeliaJSON | null = null;
   private cidMap: Map<string, CID> = new Map();
-  private initPromise: Promise<void> | null = null;
-  private isInitialized = false;
+  private initialized = false;
 
   /**
-   * Initialiserar Helia node
+   * Initialiserar Helia node - måste köras innan användning
    */
   async initialize(): Promise<void> {
-    if (this.isInitialized) {
+    if (this.initialized) {
       console.log('✅ IPFS redan initialiserad');
       return;
     }
+
+    console.log('🚀 Startar Helia node...');
     
-    if (this.initPromise) {
-      console.log('⏳ Väntar på pågående initialisering...');
-      return this.initPromise;
+    try {
+      // Skapa Helia node
+      this.node = await createHelia();
+      console.log('✅ Helia node skapad');
+      
+      // Skapa JSON store
+      this.jsonStore = json(this.node);
+      console.log('✅ JSON store skapad');
+      
+      this.initialized = true;
+      console.log('✅ IPFS helt initialiserad och redo!');
+    } catch (error) {
+      console.error('❌ Fel vid initialisering av Helia:', error);
+      this.initialized = false;
+      this.node = null;
+      this.jsonStore = null;
+      throw new Error(`IPFS initialisering misslyckades: ${error}`);
     }
-
-    this.initPromise = (async () => {
-      try {
-        console.log('🚀 Startar Helia node...');
-        this.node = await createHelia();
-        console.log('✅ Helia node skapad, initierar JSON store...');
-        
-        this.jsonStore = json(this.node);
-        console.log('✅ JSON store skapad');
-        
-        this.isInitialized = true;
-        console.log('✅ Helia node redo!', { 
-          hasNode: !!this.node, 
-          hasJsonStore: !!this.jsonStore 
-        });
-      } catch (error) {
-        console.error('❌ Fel vid initialisering av Helia:', error);
-        this.isInitialized = false;
-        this.node = null;
-        this.jsonStore = null;
-        throw error;
-      }
-    })();
-
-    return this.initPromise;
   }
 
   /**
    * Lagrar data i IPFS och returnerar CID
    */
   async set(key: string, data: StoredData): Promise<void> {
-    await this.ensureInitialized();
-    
-    if (!this.jsonStore || !this.node) {
-      throw new Error(`IPFS är inte korrekt initialiserad. Node: ${!!this.node}, JsonStore: ${!!this.jsonStore}`);
+    if (!this.initialized || !this.jsonStore || !this.node) {
+      throw new Error(`IPFS inte redo. Initialized: ${this.initialized}, Node: ${!!this.node}, JsonStore: ${!!this.jsonStore}`);
     }
 
     try {
-      console.log(`📦 Lagrar data med key: ${key}`);
+      console.log(`📦 Lagrar data med key: ${key}...`);
+      
       // Lagra data i IPFS och få tillbaka CID
       const cid = await this.jsonStore.add(data);
       this.cidMap.set(key, cid);
       
-      console.log(`📦 Data lagrad i IPFS med CID: ${cid.toString()}`);
+      console.log(`✅ Data lagrad i IPFS med CID: ${cid.toString()}`);
       
       // Spara mapping i localStorage för persistence
       this.saveCIDMapping();
@@ -85,10 +74,14 @@ export class IPFSStorage implements StorageAdapter {
    * Hämtar data från IPFS via key (använder lokal CID mapping)
    */
   async get(key: string): Promise<StoredData | null> {
-    await this.ensureInitialized();
+    if (!this.initialized) {
+      console.warn('⚠️ IPFS inte initialiserad, returnerar null');
+      return null;
+    }
     
     const cid = this.cidMap.get(key);
     if (!cid) {
+      console.log(`⚠️ Ingen CID hittad för key: ${key}`);
       return null;
     }
 
@@ -100,14 +93,14 @@ export class IPFSStorage implements StorageAdapter {
    * Används när man får CID från QR-kod
    */
   async getByCID(cid: CID | string): Promise<StoredData | null> {
-    await this.ensureInitialized();
-    
-    if (!this.jsonStore) {
-      throw new Error('IPFS JSON store inte initialiserad');
+    if (!this.initialized || !this.jsonStore) {
+      throw new Error('IPFS inte initialiserad');
     }
 
     try {
       const cidObj = typeof cid === 'string' ? await this.parseCID(cid) : cid;
+      console.log(`📥 Hämtar data från IPFS CID: ${cidObj.toString()}`);
+      
       const data = await this.jsonStore.get(cidObj);
       return data as StoredData;
     } catch (error) {
@@ -156,58 +149,43 @@ export class IPFSStorage implements StorageAdapter {
       await this.node.stop();
       this.node = null;
       this.jsonStore = null;
-      this.isInitialized = false;
+      this.initialized = false;
     }
   }
 
   // Private helpers
 
-  private async ensureInitialized(): Promise<void> {
-    console.log('🔍 ensureInitialized called. State:', {
-      isInitialized: this.isInitialized,
-      hasNode: !!this.node,
-      hasJsonStore: !!this.jsonStore,
-      hasInitPromise: !!this.initPromise
-    });
-    
-    if (!this.isInitialized) {
-      console.log('⚠️ Not initialized, calling initialize()');
-      await this.initialize();
-    }
-    
-    console.log('🔍 After initialization check:', {
-      isInitialized: this.isInitialized,
-      hasNode: !!this.node,
-      hasJsonStore: !!this.jsonStore
-    });
-  }
-
   private async parseCID(cidString: string): Promise<CID> {
-    // Dynamisk import för att undvika bundling issues
     const { CID } = await import('multiformats/cid');
     return CID.parse(cidString);
   }
 
   private saveCIDMapping(): void {
-    const mapping: Record<string, string> = {};
-    this.cidMap.forEach((cid, key) => {
-      mapping[key] = cid.toString();
-    });
-    localStorage.setItem('ipfs-cid-mapping', JSON.stringify(mapping));
+    try {
+      const mapping: Record<string, string> = {};
+      this.cidMap.forEach((cid, key) => {
+        mapping[key] = cid.toString();
+      });
+      localStorage.setItem('ipfs-cid-mapping', JSON.stringify(mapping));
+      console.log('💾 CID mappings sparade');
+    } catch (error) {
+      console.error('❌ Kunde inte spara CID mappings:', error);
+    }
   }
 
   private async loadCIDMapping(): Promise<void> {
-    const saved = localStorage.getItem('ipfs-cid-mapping');
-    if (saved) {
-      try {
+    try {
+      const saved = localStorage.getItem('ipfs-cid-mapping');
+      if (saved) {
         const mapping = JSON.parse(saved);
         for (const [key, cidString] of Object.entries(mapping)) {
           const cid = await this.parseCID(cidString as string);
           this.cidMap.set(key, cid);
         }
-      } catch (error) {
-        console.error('❌ Fel vid laddning av CID mapping:', error);
+        console.log('✅ CID mappings laddade');
       }
+    } catch (error) {
+      console.error('❌ Fel vid laddning av CID mapping:', error);
     }
   }
 
@@ -215,7 +193,10 @@ export class IPFSStorage implements StorageAdapter {
    * Laddar befintliga CID mappings från localStorage
    */
   async restore(): Promise<void> {
-    await this.ensureInitialized();
+    if (!this.initialized) {
+      console.warn('⚠️ Kan inte restore, IPFS inte initialiserad');
+      return;
+    }
     await this.loadCIDMapping();
   }
 }
