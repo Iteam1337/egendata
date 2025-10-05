@@ -32,6 +32,7 @@ const Index = () => {
   const [charlieDecrypted, setCharlieDecrypted] = useState<object | null>(null);
   const [charlieDecryptedAfterRevoke, setCharlieDecryptedAfterRevoke] = useState<object | null>(null);
   const [bobRevoked, setBobRevoked] = useState(false);
+  const [bobFailedDecrypt, setBobFailedDecrypt] = useState(false);
 
   const steps = ["Generera nycklar", "Kryptera", "Dekryptera", "Revoke Bob", "Verifiera"];
 
@@ -143,6 +144,26 @@ const Index = () => {
         title: "Fel",
         description: "Kunde inte dekryptera data",
         variant: "destructive",
+      });
+    }
+  };
+
+  const handleTestBobDecrypt = async () => {
+    if (!bob || !keystone || !encryptedData) return;
+    
+    try {
+      await decryptData(encryptedData, keystone, "Bob", bob.privateKey);
+      // Om detta lyckas (vilket det inte borde), visa varning
+      toast({
+        title: "Oväntat resultat",
+        description: "Bob kunde dekryptera - något är fel!",
+        variant: "destructive",
+      });
+    } catch (error) {
+      setBobFailedDecrypt(true);
+      toast({
+        title: "Dekryptering nekad! ✓",
+        description: "Bob kan inte längre dekryptera datan efter revoke",
       });
     }
   };
@@ -284,10 +305,32 @@ const Index = () => {
                   Återkalla Bobs åtkomst
                 </Button>
               ) : (
-                <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
-                  <p className="text-sm font-medium text-destructive">
-                    Bobs nyckel har tagits bort från keystone. Bob kan inte längre dekryptera datan.
-                  </p>
+                <div className="space-y-4">
+                  <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+                    <p className="text-sm font-medium text-destructive mb-3">
+                      Bobs nyckel har tagits bort från keystone. Bob kan inte längre dekryptera datan.
+                    </p>
+                  </div>
+                  
+                  {!bobFailedDecrypt && (
+                    <Button 
+                      onClick={handleTestBobDecrypt} 
+                      variant="outline" 
+                      size="lg" 
+                      className="shadow-card border-destructive/50 hover:bg-destructive/10"
+                    >
+                      <PlayCircle className="w-5 h-5 mr-2" />
+                      Testa dekryptera med Bobs nyckel
+                    </Button>
+                  )}
+                  
+                  {bobFailedDecrypt && (
+                    <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
+                      <p className="text-sm font-medium text-success">
+                        ✓ Bekräftat: Bob kan inte längre dekryptera datan!
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
