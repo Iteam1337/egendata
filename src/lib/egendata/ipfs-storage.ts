@@ -163,9 +163,23 @@ export class IPFSStorage implements StorageAdapter {
   // Private helpers
 
   private async ensureInitialized(): Promise<void> {
+    console.log('🔍 ensureInitialized called. State:', {
+      isInitialized: this.isInitialized,
+      hasNode: !!this.node,
+      hasJsonStore: !!this.jsonStore,
+      hasInitPromise: !!this.initPromise
+    });
+    
     if (!this.isInitialized) {
+      console.log('⚠️ Not initialized, calling initialize()');
       await this.initialize();
     }
+    
+    console.log('🔍 After initialization check:', {
+      isInitialized: this.isInitialized,
+      hasNode: !!this.node,
+      hasJsonStore: !!this.jsonStore
+    });
   }
 
   private async parseCID(cidString: string): Promise<CID> {

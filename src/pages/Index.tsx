@@ -50,10 +50,15 @@ const Index = () => {
   // Initialisera IPFS när komponenten laddas
   useEffect(() => {
     const initIPFS = async () => {
+      console.log('🔄 Starting IPFS initialization from useEffect');
       setIpfsInitializing(true);
       try {
         await ipfsStorage.initialize();
+        console.log('✅ IPFS initialization complete');
+        
         await ipfsStorage.restore(); // Ladda befintliga CID mappings
+        console.log('✅ IPFS restore complete');
+        
         setIpfsInitialized(true);
         console.log('✅ IPFS redo att användas');
       } catch (error) {
@@ -68,6 +73,7 @@ const Index = () => {
 
     // Cleanup när komponenten unmountas
     return () => {
+      console.log('🧹 Cleaning up IPFS');
       ipfsStorage.stop();
     };
   }, [ipfsStorage]);
