@@ -72,6 +72,7 @@ const Index = () => {
         originalData,
         "Alice",
         [
+          { name: "Alice", publicKey: alice.publicKey },  // Alice måste alltid ha åtkomst
           { name: "Bob", publicKey: bob.publicKey },
           { name: "Charlie", publicKey: charlie.publicKey }
         ]
@@ -82,7 +83,7 @@ const Index = () => {
       
       toast({
         title: "Data krypterad!",
-        description: "Bob och Charlie har nu åtkomst i egendata storage",
+        description: "Alice, Bob och Charlie har nu åtkomst i egendata storage",
       });
     } catch (error) {
       toast({
