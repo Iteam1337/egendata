@@ -6,20 +6,12 @@ import { DataDisplay } from "@/components/DataDisplay";
 import { StepIndicator } from "@/components/StepIndicator";
 import { QRKeyDisplay } from "@/components/QRKeyDisplay";
 import { QRKeyScanner } from "@/components/QRKeyScanner";
-import { 
-  generateKeyPair, 
-  encryptWithSharedAccess, 
-  decryptData, 
-  revokeAccess,
-  reGrantAccess,
-  KeyPair,
-  Keystone
-} from "@/lib/crypto";
+import { EgendataClient, type KeyPair } from "@/lib/egendata";
 import { encodeKeyForQR, decodeKeyFromQR, validateKeyData } from "@/lib/qr-key-exchange";
 import { Shield, PlayCircle, UserX, QrCode, ScanLine, UserPlus } from "lucide-react";
-import * as jose from 'jose';
 
 const Index = () => {
+  const [egendata] = useState(() => new EgendataClient());
   const [step, setStep] = useState(0);
   const [alice, setAlice] = useState<KeyPair | null>(null);
   const [bob, setBob] = useState<KeyPair | null>(null);
@@ -32,7 +24,6 @@ const Index = () => {
   });
   
   const [encryptedData, setEncryptedData] = useState<string>("");
-  const [keystone, setKeystone] = useState<Keystone | null>(null);
   const [bobDecrypted, setBobDecrypted] = useState<object | null>(null);
   const [charlieDecrypted, setCharlieDecrypted] = useState<object | null>(null);
   const [charlieDecryptedAfterRevoke, setCharlieDecryptedAfterRevoke] = useState<object | null>(null);
@@ -45,13 +36,14 @@ const Index = () => {
   const [bobQRData, setBobQRData] = useState<string>("");
   const [bobReGranted, setBobReGranted] = useState(false);
 
+  const DATA_ID = "alice-data";
   const steps = ["Generera nycklar", "Kryptera", "Dekryptera", "Revoke Bob", "Verifiera"];
 
   const handleGenerateKeys = async () => {
     try {
-      const aliceKeys = await generateKeyPair("Alice");
-      const bobKeys = await generateKeyPair("Bob");
-      const charlieKeys = await generateKeyPair("Charlie");
+      const aliceKeys = await egendata.generateKeyPair("Alice");
+      const bobKeys = await egendata.generateKeyPair("Bob");
+      const charlieKeys = await egendata.generateKeyPair("Charlie");
       
       setAlice(aliceKeys);
       setBob(bobKeys);
@@ -75,21 +67,22 @@ const Index = () => {
     if (!alice || !bob || !charlie) return;
     
     try {
-      const { encryptedData: encrypted, keystone: ks } = await encryptWithSharedAccess(
+      await egendata.writeData(
+        DATA_ID,
         originalData,
+        "Alice",
         [
           { name: "Bob", publicKey: bob.publicKey },
           { name: "Charlie", publicKey: charlie.publicKey }
         ]
       );
       
-      setEncryptedData(encrypted);
-      setKeystone(ks);
+      setEncryptedData(DATA_ID);
       setStep(2);
       
       toast({
         title: "Data krypterad!",
-        description: "Bob och Charlie har nu åtkomst via keystone",
+        description: "Bob och Charlie har nu åtkomst i egendata storage",
       });
     } catch (error) {
       toast({
@@ -101,11 +94,11 @@ const Index = () => {
   };
 
   const handleDecrypt = async () => {
-    if (!bob || !charlie || !keystone || !encryptedData) return;
+    if (!bob || !charlie || !encryptedData) return;
     
     try {
-      const bobData = await decryptData(encryptedData, keystone, "Bob", bob.privateKey);
-      const charlieData = await decryptData(encryptedData, keystone, "Charlie", charlie.privateKey);
+      const bobData = await egendata.readData(DATA_ID, "Bob", bob.privateKey);
+      const charlieData = await egendata.readData(DATA_ID, "Charlie", charlie.privateKey);
       
       setBobDecrypted(bobData);
       setCharlieDecrypted(charlieData);
@@ -113,7 +106,7 @@ const Index = () => {
       
       toast({
         title: "Dekryptering lyckades!",
-        description: "Både Bob och Charlie kunde läsa datan",
+        description: "Både Bob och Charlie kunde läsa datan från egendata",
       });
     } catch (error) {
       toast({
@@ -125,24 +118,29 @@ const Index = () => {
   };
 
   const handleRevokeBob = async () => {
-    if (!keystone) return;
-    
-    const newKeystone = revokeAccess(keystone, "Bob");
-    setKeystone(newKeystone);
-    setBobRevoked(true);
-    setStep(4);
-    
-    toast({
-      title: "Bobs åtkomst återkallad!",
-      description: "Bob kan inte längre dekryptera datan",
-    });
+    try {
+      await egendata.revokeAccess(DATA_ID, "Bob");
+      setBobRevoked(true);
+      setStep(4);
+      
+      toast({
+        title: "Bobs åtkomst återkallad!",
+        description: "Bob kan inte längre dekryptera datan",
+      });
+    } catch (error) {
+      toast({
+        title: "Fel",
+        description: "Kunde inte återkalla åtkomst",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleVerifyCharlie = async () => {
-    if (!charlie || !keystone || !encryptedData) return;
+    if (!charlie || !encryptedData) return;
     
     try {
-      const charlieData = await decryptData(encryptedData, keystone, "Charlie", charlie.privateKey);
+      const charlieData = await egendata.readData(DATA_ID, "Charlie", charlie.privateKey);
       setCharlieDecryptedAfterRevoke(charlieData);
       setStep(5);
       
@@ -160,10 +158,10 @@ const Index = () => {
   };
 
   const handleTestBobDecrypt = async () => {
-    if (!bob || !keystone || !encryptedData) return;
+    if (!bob || !encryptedData) return;
     
     try {
-      await decryptData(encryptedData, keystone, "Bob", bob.privateKey);
+      await egendata.readData(DATA_ID, "Bob", bob.privateKey);
       // Om detta lyckas (vilket det inte borde), visa varning
       toast({
         title: "Oväntat resultat",
@@ -216,7 +214,7 @@ const Index = () => {
         return;
       }
       
-      if (!alice || !keystone || !encryptedData) {
+      if (!alice || !encryptedData) {
         toast({
           title: "Fel",
           description: "Saknar nödvändig data för att återge åtkomst",
@@ -226,23 +224,21 @@ const Index = () => {
       }
       
       // Import Bob's public key from JWK
-      const bobPublicKey = await jose.importJWK(keyData.publicKeyJWK, 'RSA-OAEP-256') as CryptoKey;
+      const bobPublicKey = await egendata.importPublicKey(keyData.publicKeyJWK);
       
       // Re-grant access to Bob
-      const newKeystone = await reGrantAccess(
-        encryptedData,
-        keystone,
+      await egendata.reGrantAccess(
+        DATA_ID,
         "Bob",
         bobPublicKey,
         alice.privateKey
       );
       
-      setKeystone(newKeystone);
       setBobReGranted(true);
       
       toast({
         title: "Åtkomst återställd!",
-        description: "Bob har nu åtkomst till datan igen",
+        description: "Bob har nu åtkomst till datan igen via egendata",
       });
     } catch (error) {
       console.error('QR scan error:', error);
