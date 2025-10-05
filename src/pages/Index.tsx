@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { UserCard } from "@/components/UserCard";
+import { ActorCard } from "@/components/ActorCard";
 import { DataDisplay } from "@/components/DataDisplay";
 import { StepIndicator } from "@/components/StepIndicator";
 import { QRKeyDisplay } from "@/components/QRKeyDisplay";
 import { QRKeyScanner } from "@/components/QRKeyScanner";
 import { EgendataClient, type KeyPair } from "@/lib/egendata";
 import { encodeKeyForQR, decodeKeyFromQR, validateKeyData, qrKeyDataToJWK } from "@/lib/qr-key-exchange";
-import { Shield, PlayCircle, UserX, QrCode, ScanLine, UserPlus } from "lucide-react";
+import { ArrowRight, Check, QrCode, ScanLine } from "lucide-react";
 
 const Index = () => {
   const [egendata] = useState(() => new EgendataClient());
@@ -18,17 +19,15 @@ const Index = () => {
   const [charlie, setCharlie] = useState<KeyPair | null>(null);
   
   const [originalData] = useState({
-    name: "Alice",
-    email: "alice@example.com",
-    message: "Detta är min privata information!"
+    ssn: "19800101-1234",
+    creditCard: "4111-1111-1111-1111",
+    address: "Exempelgatan 123, Stockholm"
   });
   
   const [encryptedData, setEncryptedData] = useState<string>("");
   const [bobDecrypted, setBobDecrypted] = useState<object | null>(null);
   const [charlieDecrypted, setCharlieDecrypted] = useState<object | null>(null);
-  const [charlieDecryptedAfterRevoke, setCharlieDecryptedAfterRevoke] = useState<object | null>(null);
   const [bobRevoked, setBobRevoked] = useState(false);
-  const [bobFailedDecrypt, setBobFailedDecrypt] = useState(false);
   
   // QR code states
   const [showBobQR, setShowBobQR] = useState(false);
@@ -36,8 +35,8 @@ const Index = () => {
   const [bobQRData, setBobQRData] = useState<string>("");
   const [bobReGranted, setBobReGranted] = useState(false);
 
-  const DATA_ID = "alice-data";
-  const steps = ["Generera nycklar", "Kryptera", "Dekryptera", "Revoke Bob", "Verifiera"];
+  const DATA_ID = "alice-sensitive-data";
+  const steps = ["Setup", "Encrypt", "Share", "Revoke", "Re-grant"];
 
   const handleGenerateKeys = async () => {
     try {
@@ -72,7 +71,7 @@ const Index = () => {
         originalData,
         "Alice",
         [
-          { name: "Alice", publicKey: alice.publicKey },  // Alice måste alltid ha åtkomst
+          { name: "Alice", publicKey: alice.publicKey },
           { name: "Bob", publicKey: bob.publicKey },
           { name: "Charlie", publicKey: charlie.publicKey }
         ]
@@ -83,7 +82,7 @@ const Index = () => {
       
       toast({
         title: "Data krypterad!",
-        description: "Alice, Bob och Charlie har nu åtkomst i egendata storage",
+        description: "Datan är nu krypterad och sparad i egendata",
       });
     } catch (error) {
       toast({
@@ -94,8 +93,8 @@ const Index = () => {
     }
   };
 
-  const handleDecrypt = async () => {
-    if (!bob || !charlie || !encryptedData) return;
+  const handleShareAccess = async () => {
+    if (!bob || !charlie) return;
     
     try {
       const bobData = await egendata.readData(DATA_ID, "Bob", bob.privateKey);
@@ -106,8 +105,8 @@ const Index = () => {
       setStep(3);
       
       toast({
-        title: "Dekryptering lyckades!",
-        description: "Både Bob och Charlie kunde läsa datan från egendata",
+        title: "Åtkomst bekräftad!",
+        description: "Bob och Charlie kan nu dekryptera datan",
       });
     } catch (error) {
       toast({
@@ -122,10 +121,11 @@ const Index = () => {
     try {
       await egendata.revokeAccess(DATA_ID, "Bob");
       setBobRevoked(true);
+      setBobDecrypted(null);
       setStep(4);
       
       toast({
-        title: "Bobs åtkomst återkallad!",
+        title: "Åtkomst återkallad!",
         description: "Bob kan inte längre dekryptera datan",
       });
     } catch (error) {
@@ -133,47 +133,6 @@ const Index = () => {
         title: "Fel",
         description: "Kunde inte återkalla åtkomst",
         variant: "destructive",
-      });
-    }
-  };
-
-  const handleVerifyCharlie = async () => {
-    if (!charlie || !encryptedData) return;
-    
-    try {
-      const charlieData = await egendata.readData(DATA_ID, "Charlie", charlie.privateKey);
-      setCharlieDecryptedAfterRevoke(charlieData);
-      setStep(5);
-      
-      toast({
-        title: "Verifiering lyckades!",
-        description: "Charlie kan fortfarande läsa datan efter Bobs revoke",
-      });
-    } catch (error) {
-      toast({
-        title: "Fel",
-        description: "Kunde inte dekryptera data",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleTestBobDecrypt = async () => {
-    if (!bob || !encryptedData) return;
-    
-    try {
-      await egendata.readData(DATA_ID, "Bob", bob.privateKey);
-      // Om detta lyckas (vilket det inte borde), visa varning
-      toast({
-        title: "Oväntat resultat",
-        description: "Bob kunde dekryptera - något är fel!",
-        variant: "destructive",
-      });
-    } catch (error) {
-      setBobFailedDecrypt(true);
-      toast({
-        title: "Dekryptering nekad! ✓",
-        description: "Bob kan inte längre dekryptera datan efter revoke",
       });
     }
   };
@@ -187,7 +146,7 @@ const Index = () => {
     
     toast({
       title: "QR-kod genererad!",
-      description: "Bob kan nu visa sin QR-kod för Alice",
+      description: "Bob kan nu dela sin nyckel via QR-kod",
     });
   };
 
@@ -206,7 +165,6 @@ const Index = () => {
         return;
       }
       
-      // Konvertera tillbaka till full JWK-format
       const { name, publicKeyJWK } = qrKeyDataToJWK(keyData);
       
       if (name !== "Bob") {
@@ -218,7 +176,7 @@ const Index = () => {
         return;
       }
       
-      if (!alice || !encryptedData) {
+      if (!alice) {
         toast({
           title: "Fel",
           description: "Saknar nödvändig data för att återge åtkomst",
@@ -227,10 +185,8 @@ const Index = () => {
         return;
       }
       
-      // Import Bob's public key from JWK
       const bobPublicKey = await egendata.importPublicKey(publicKeyJWK);
       
-      // Re-grant access to Bob
       await egendata.reGrantAccess(
         DATA_ID,
         "Bob",
@@ -239,10 +195,11 @@ const Index = () => {
       );
       
       setBobReGranted(true);
+      setBobRevoked(false);
       
       toast({
         title: "Åtkomst återställd!",
-        description: "Bob har nu åtkomst till datan igen via egendata",
+        description: "Bob har nu åtkomst till datan igen via QR-kod",
       });
     } catch (error) {
       console.error('QR scan error:', error);
@@ -256,273 +213,289 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="mb-16">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-              <div className="w-8 h-8 bg-white rounded-sm" style={{ 
-                backgroundImage: `repeating-linear-gradient(90deg, hsl(188 100% 50%) 0px, hsl(188 100% 50%) 2px, transparent 2px, transparent 4px),
-                                 repeating-linear-gradient(0deg, hsl(188 100% 50%) 0px, hsl(188 100% 50%) 2px, transparent 2px, transparent 4px)` 
+      {/* Header */}
+      <div className="border-b border-border bg-white sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto px-6 py-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <div className="w-6 h-6 bg-white rounded-sm" style={{ 
+                backgroundImage: `repeating-linear-gradient(90deg, hsl(195 100% 52%) 0px, hsl(195 100% 52%) 2px, transparent 2px, transparent 4px),
+                                 repeating-linear-gradient(0deg, hsl(195 100% 52%) 0px, hsl(195 100% 52%) 2px, transparent 2px, transparent 4px)` 
               }} />
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <h1 className="text-xl font-semibold tracking-tight">
               egen<span className="text-primary">DATA</span>
             </h1>
           </div>
-          <p className="text-sm italic font-serif text-muted-foreground mb-2">Holy grail:</p>
-          <h2 className="text-5xl md:text-6xl font-bold leading-tight max-w-4xl">
-            Secure decentralised datastreams where the end user has full control
-          </h2>
         </div>
+      </div>
 
-        {/* Step Indicator */}
+      {/* Main Content */}
+      <div className="max-w-3xl mx-auto px-6 py-12">
         <StepIndicator steps={steps} currentStep={step} />
 
-        {/* Main Content */}
-        <div className="space-y-8">
-          {/* Step 1: Generate Keys */}
-          {step >= 0 && (
+        {/* Step 0: Introduction & Key Generation */}
+        {step === 0 && (
+          <div className="animate-fade-in space-y-8">
             <div className="space-y-4">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-gradient-primary text-primary-foreground flex items-center justify-center text-sm font-bold">1</span>
-                Generera krypteringsnycklar
+              <p className="text-sm italic font-serif text-muted-foreground">Demo:</p>
+              <h2 className="text-4xl md:text-5xl font-bold leading-tight">
+                Secure decentralised datastreams
               </h2>
-              
-              {!alice ? (
-                <Button onClick={handleGenerateKeys} size="lg" className="shadow-elevated">
-                  <PlayCircle className="w-5 h-5 mr-2" />
-                  Generera nycklar för Alice, Bob & Charlie
-                </Button>
-              ) : (
-                <div className="grid md:grid-cols-3 gap-4">
-                  <UserCard
-                    name="Alice"
-                    hasAccess={true}
-                    canDecrypt={true}
-                    publicKeyPreview={JSON.stringify(alice.publicKeyJWK).substring(0, 50) + "..."}
-                  />
-                  <UserCard
-                    name="Bob"
-                    hasAccess={!bobRevoked}
-                    canDecrypt={!bobRevoked && !!bobDecrypted}
-                    publicKeyPreview={JSON.stringify(bob!.publicKeyJWK).substring(0, 50) + "..."}
-                  />
-                  <UserCard
-                    name="Charlie"
-                    hasAccess={true}
-                    canDecrypt={!!charlieDecrypted}
-                    publicKeyPreview={JSON.stringify(charlie!.publicKeyJWK).substring(0, 50) + "..."}
-                  />
-                </div>
-              )}
+              <p className="text-lg text-muted-foreground">
+                Den här demon visar hur Alice kan kryptera känslig data, dela åtkomst med Bob och Charlie, 
+                och sedan dynamiskt återkalla och återge åtkomst – allt med full kontroll.
+              </p>
             </div>
-          )}
 
-          {/* Step 2: Encrypt */}
-          {step >= 1 && (
+            <Card className="p-8 bg-muted/30">
+              <h3 className="font-semibold text-lg mb-4">Steg 1: Generera krypteringsnycklar</h3>
+              <p className="text-muted-foreground mb-6">
+                Först skapar vi RSA-nyckelpar för Alice, Bob och Charlie. Varje person får en publik och privat nyckel.
+              </p>
+              <Button onClick={handleGenerateKeys} size="lg" className="w-full">
+                Starta demo <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Card>
+          </div>
+        )}
+
+        {/* Step 1: Encrypt Data */}
+        {step === 1 && (
+          <div className="animate-fade-in space-y-8">
             <div className="space-y-4">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-gradient-primary text-primary-foreground flex items-center justify-center text-sm font-bold">2</span>
-                Kryptera Alices data
-              </h2>
-              
-              <div className="grid md:grid-cols-2 gap-4">
+              <h2 className="text-4xl font-bold">Kryptera känslig data</h2>
+              <p className="text-lg text-muted-foreground">
+                Alice har känslig information som hon vill dela med Bob och Charlie, men ingen annan ska kunna läsa den.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <ActorCard name="Alice" role="Data Owner" status="active" align="left">
                 <DataDisplay
-                  title="Original data (Alice)"
+                  title="Känslig information"
                   data={JSON.stringify(originalData, null, 2)}
                   variant="original"
                 />
-                
-                {encryptedData && (
+              </ActorCard>
+
+              {encryptedData && (
+                <div className="ml-auto">
                   <DataDisplay
-                    title="Krypterad data"
-                    data={encryptedData.substring(0, 200) + "..."}
+                    title="Krypterad data (Base64)"
+                    data={encryptedData.substring(0, 150) + "..."}
                     isEncrypted
                     variant="encrypted"
                   />
-                )}
-              </div>
-              
-              {!encryptedData && (
-                <Button onClick={handleEncrypt} size="lg" className="shadow-elevated">
-                  <PlayCircle className="w-5 h-5 mr-2" />
-                  Kryptera och dela med Bob & Charlie
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-4">
+              <Button variant="outline" onClick={() => setStep(0)}>
+                Tillbaka
+              </Button>
+              {!encryptedData ? (
+                <Button onClick={handleEncrypt} size="lg" className="flex-1">
+                  Kryptera med AES-GCM <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              ) : (
+                <Button onClick={() => setStep(2)} size="lg" className="flex-1">
+                  Fortsätt <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               )}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Step 3: Decrypt */}
-          {step >= 2 && !bobRevoked && (
+        {/* Step 2: Share Access */}
+        {step === 2 && (
+          <div className="animate-fade-in space-y-8">
             <div className="space-y-4">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-gradient-primary text-primary-foreground flex items-center justify-center text-sm font-bold">3</span>
-                Dekryptera data
-              </h2>
-              
-              {!bobDecrypted ? (
-                <Button onClick={handleDecrypt} size="lg" className="shadow-elevated">
-                  <PlayCircle className="w-5 h-5 mr-2" />
-                  Låt Bob & Charlie dekryptera
-                </Button>
-              ) : (
-                <div className="grid md:grid-cols-2 gap-4">
+              <h2 className="text-4xl font-bold">Dela åtkomst</h2>
+              <p className="text-lg text-muted-foreground">
+                Bob och Charlie kan nu dekryptera datan med sina privata nycklar. 
+                Varje person får en krypterad DEK (Data Encryption Key) som endast de kan dekryptera.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <ActorCard name="Bob" role="Recipient" status={bobDecrypted ? "success" : "default"} align="left">
+                {bobDecrypted && (
                   <DataDisplay
-                    title="Bobs dekrypterade data"
+                    title="Dekrypterad data"
                     data={JSON.stringify(bobDecrypted, null, 2)}
                     variant="decrypted"
                   />
+                )}
+              </ActorCard>
+
+              <ActorCard name="Charlie" role="Recipient" status={charlieDecrypted ? "success" : "default"} align="right">
+                {charlieDecrypted && (
                   <DataDisplay
-                    title="Charlies dekrypterade data"
+                    title="Dekrypterad data"
                     data={JSON.stringify(charlieDecrypted, null, 2)}
                     variant="decrypted"
                   />
-                </div>
-              )}
+                )}
+              </ActorCard>
             </div>
-          )}
 
-          {/* Step 4: Revoke Bob */}
-          {step >= 3 && (
-            <div className="space-y-4">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-gradient-primary text-primary-foreground flex items-center justify-center text-sm font-bold">4</span>
-                Återkalla Bobs åtkomst
-              </h2>
-              
-              {!bobRevoked ? (
-                <Button onClick={handleRevokeBob} variant="destructive" size="lg" className="shadow-elevated">
-                  <UserX className="w-5 h-5 mr-2" />
-                  Återkalla Bobs åtkomst
+            <div className="flex gap-4">
+              <Button variant="outline" onClick={() => setStep(1)}>
+                Tillbaka
+              </Button>
+              {!bobDecrypted ? (
+                <Button onClick={handleShareAccess} size="lg" className="flex-1">
+                  Låt Bob & Charlie dekryptera <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               ) : (
-                <div className="space-y-4">
+                <Button onClick={() => setStep(3)} size="lg" className="flex-1">
+                  Fortsätt <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Revoke Access */}
+        {step === 3 && (
+          <div className="animate-fade-in space-y-8">
+            <div className="space-y-4">
+              <h2 className="text-4xl font-bold">Återkalla åtkomst</h2>
+              <p className="text-lg text-muted-foreground">
+                Alice vill inte längre att Bob ska ha åtkomst. 
+                Hon kan återkalla Bobs åtkomst genom att ta bort hans nyckel från keystone.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <ActorCard name="Bob" role="Recipient" status={bobRevoked ? "revoked" : "success"} align="left">
+                {bobRevoked ? (
                   <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
-                    <p className="text-sm font-medium text-destructive mb-3">
-                      Bobs nyckel har tagits bort från keystone. Bob kan inte längre dekryptera datan.
+                    <p className="text-sm text-destructive font-medium">
+                      ✗ Åtkomst återkallad
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Bob kan inte längre dekryptera datan
                     </p>
                   </div>
-                  
-                  {!bobFailedDecrypt && (
-                    <Button 
-                      onClick={handleTestBobDecrypt} 
-                      variant="outline" 
-                      size="lg" 
-                      className="shadow-card border-destructive/50 hover:bg-destructive/10"
-                    >
-                      <PlayCircle className="w-5 h-5 mr-2" />
-                      Testa dekryptera med Bobs nyckel
-                    </Button>
-                  )}
-                  
-                  {bobFailedDecrypt && (
-                    <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
-                      <p className="text-sm font-medium text-success">
-                        ✓ Bekräftat: Bob kan inte längre dekryptera datan!
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                ) : (
+                  <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
+                    <p className="text-sm text-success font-medium">
+                      ✓ Har åtkomst
+                    </p>
+                  </div>
+                )}
+              </ActorCard>
 
-          {/* Step 5: Verify Charlie */}
-          {step >= 4 && (
-            <div className="space-y-4">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-gradient-primary text-primary-foreground flex items-center justify-center text-sm font-bold">5</span>
-                Verifiera Charlies åtkomst
-              </h2>
-              
-              {!charlieDecryptedAfterRevoke ? (
-                <Button onClick={handleVerifyCharlie} size="lg" className="shadow-elevated">
-                  <PlayCircle className="w-5 h-5 mr-2" />
-                  Verifiera att Charlie fortfarande kan dekryptera
+              <ActorCard name="Charlie" role="Recipient" status="success" align="right">
+                <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
+                  <p className="text-sm text-success font-medium">
+                    ✓ Behåller åtkomst
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Charlie påverkas inte av Bobs återkallade åtkomst
+                  </p>
+                </div>
+              </ActorCard>
+            </div>
+
+            <div className="flex gap-4">
+              <Button variant="outline" onClick={() => setStep(2)}>
+                Tillbaka
+              </Button>
+              {!bobRevoked ? (
+                <Button onClick={handleRevokeBob} variant="destructive" size="lg" className="flex-1">
+                  Återkalla Bobs åtkomst <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               ) : (
-                <DataDisplay
-                  title="Charlies dekrypterade data (efter Bobs revoke)"
-                  data={JSON.stringify(charlieDecryptedAfterRevoke, null, 2)}
-                  variant="decrypted"
-                />
+                <Button onClick={() => setStep(4)} size="lg" className="flex-1">
+                  Fortsätt <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
               )}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Step 6: QR Code Key Exchange */}
-          {step >= 4 && bobRevoked && (
+        {/* Step 4: Re-grant Access via QR */}
+        {step === 4 && (
+          <div className="animate-fade-in space-y-8">
             <div className="space-y-4">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-gradient-primary text-primary-foreground flex items-center justify-center text-sm font-bold">6</span>
-                Nyckelutbyte med QR-kod
-              </h2>
-              
-              <p className="text-muted-foreground">
-                Bob vill få tillgång igen. Bob visar sin publika nyckel via QR-kod och Alice scannar den för att återge åtkomst.
+              <h2 className="text-4xl font-bold">Återge åtkomst via QR-kod</h2>
+              <p className="text-lg text-muted-foreground">
+                Bob vill få tillgång igen. Han kan dela sin publika nyckel via QR-kod eller copy/paste, 
+                och Alice kan scanna den för att återge åtkomst.
               </p>
-              
-              <div className="grid md:grid-cols-2 gap-4">
-                {/* Bob generates QR code */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <QrCode className="w-4 h-4 text-primary" />
-                    Steg 1: Bob visar sin nyckel
-                  </h3>
-                  
-                  {!showBobQR ? (
-                    <Button onClick={handleGenerateBobQR} size="lg" className="w-full shadow-card">
-                      <QrCode className="w-5 h-5 mr-2" />
-                      Generera Bobs QR-kod
-                    </Button>
-                  ) : (
-                    <QRKeyDisplay qrData={bobQRData} userName="Bob" publicKeyJWK={bob!.publicKeyJWK} />
-                  )}
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Bob's side */}
+              <Card className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <QrCode className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold">Bob delar sin nyckel</h3>
                 </div>
                 
-                {/* Alice scans QR code */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <ScanLine className="w-4 h-4 text-accent" />
-                    Steg 2: Alice scannar QR-koden
-                  </h3>
-                  
-                  {!showScanner && !bobReGranted && (
-                    <Button 
-                      onClick={() => setShowScanner(true)} 
-                      size="lg" 
-                      className="w-full shadow-card"
-                      variant="secondary"
-                    >
-                      <ScanLine className="w-5 h-5 mr-2" />
-                      Skanna Bobs QR-kod
-                    </Button>
-                  )}
-                  
-                  {showScanner && (
-                    <QRKeyScanner 
-                      onScan={handleScanQR}
-                      onClose={() => setShowScanner(false)}
-                    />
-                  )}
-                  
-                  {bobReGranted && (
-                    <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
-                      <div className="flex items-center gap-2 text-success mb-2">
-                        <UserPlus className="w-5 h-5" />
-                        <span className="font-semibold">Åtkomst återställd!</span>
-                      </div>
-                      <p className="text-sm text-success">
-                        Bob har nu åtkomst till datan igen via QR-kod-utbyte
-                      </p>
-                    </div>
-                  )}
+                {!showBobQR ? (
+                  <Button onClick={handleGenerateBobQR} className="w-full">
+                    Generera QR-kod
+                  </Button>
+                ) : (
+                  <QRKeyDisplay qrData={bobQRData} userName="Bob" publicKeyJWK={bob!.publicKeyJWK} />
+                )}
+              </Card>
+
+              {/* Alice's side */}
+              <Card className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <ScanLine className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold">Alice scannar nyckeln</h3>
                 </div>
-              </div>
+                
+                {!showScanner && !bobReGranted && (
+                  <Button 
+                    onClick={() => setShowScanner(true)} 
+                    variant="secondary"
+                    className="w-full"
+                  >
+                    Scanna / Klistra in
+                  </Button>
+                )}
+                
+                {showScanner && (
+                  <QRKeyScanner 
+                    onScan={handleScanQR}
+                    onClose={() => setShowScanner(false)}
+                  />
+                )}
+                
+                {bobReGranted && (
+                  <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
+                    <p className="text-sm text-success font-medium flex items-center gap-2">
+                      <Check className="w-4 h-4" />
+                      Åtkomst återställd!
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Bob har nu åtkomst till datan igen
+                    </p>
+                  </div>
+                )}
+              </Card>
             </div>
-          )}
-        </div>
+
+            <div className="flex gap-4">
+              <Button variant="outline" onClick={() => setStep(3)}>
+                Tillbaka
+              </Button>
+              {bobReGranted && (
+                <Button onClick={() => setStep(0)} size="lg" className="flex-1">
+                  Börja om demo <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
