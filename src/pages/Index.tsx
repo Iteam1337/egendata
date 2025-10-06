@@ -11,7 +11,7 @@ import { IPFSStatus } from "@/components/IPFSStatus";
 import { IPFSLink } from "@/components/IPFSLink";
 import { EgendataClient, IPFSStorage, type KeyPair } from "@/lib/egendata";
 import { encodeKeyForQR, decodeKeyFromQR, validateKeyData, qrKeyDataToJWK } from "@/lib/qr-key-exchange";
-import { ArrowRight, Check, QrCode, ScanLine } from "lucide-react";
+import { ArrowRight, Check, QrCode, ScanLine, Lock, LockOpen, User, X } from "lucide-react";
 
 const Index = () => {
   // IPFS Storage
@@ -524,6 +524,22 @@ const Index = () => {
                       variant="original"
                     />
                     
+                    <div className="pt-3 border-t border-border">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Delad med:</p>
+                      <div className="flex gap-2">
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-success/10 text-success">
+                          <User className="w-3 h-3" />
+                          <span>Alice (själv)</span>
+                          <Check className="w-3 h-3" />
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-muted text-muted-foreground">
+                          <User className="w-3 h-3" />
+                          <span>Bob</span>
+                          <X className="w-3 h-3" />
+                        </div>
+                      </div>
+                    </div>
+                    
                     <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
                       📖 Läs min data
                     </Button>
@@ -541,8 +557,14 @@ const Index = () => {
               {/* Bob - Höger */}
               <div className="space-y-4">
                 <ActorCard name="Bob" role="Mottagare" status="default">
-                  <div className="p-4 text-center text-muted-foreground text-sm">
-                    Väntar på åtkomst från Alice...
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <QrCode className="w-4 h-4 text-primary" />
+                      <span className="text-muted-foreground">Publik nyckel finns</span>
+                    </div>
+                    <div className="p-4 text-center text-muted-foreground text-sm border-t border-border">
+                      Väntar på åtkomst från Alice...
+                    </div>
                   </div>
                 </ActorCard>
               </div>
@@ -581,6 +603,27 @@ const Index = () => {
               <div className="space-y-4">
                 <ActorCard name="Alice" role="Data Owner" status="active">
                   <div className="space-y-4">
+                    <div className="pt-2 border-t border-border">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Delad med:</p>
+                      <div className="flex gap-2">
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-success/10 text-success">
+                          <User className="w-3 h-3" />
+                          <span>Alice</span>
+                          <Check className="w-3 h-3" />
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-success/10 text-success">
+                          <User className="w-3 h-3" />
+                          <span>Bob</span>
+                          <Check className="w-3 h-3" />
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-muted text-muted-foreground">
+                          <User className="w-3 h-3" />
+                          <span>Charlie</span>
+                          <X className="w-3 h-3" />
+                        </div>
+                      </div>
+                    </div>
+                    
                     <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
                       📖 Läs min data
                     </Button>
@@ -597,6 +640,21 @@ const Index = () => {
               <div className="space-y-4">
                 <ActorCard name="Bob" role="Mottagare" status={bobDecrypted ? "success" : "default"}>
                   <div className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <QrCode className="w-4 h-4 text-primary" />
+                        <span className="text-muted-foreground">Publik nyckel finns</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Lock className="w-4 h-4 text-destructive" />
+                        <span className="text-muted-foreground">Ser krypterad data</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <LockOpen className="w-4 h-4 text-success" />
+                        <span className="text-success font-medium">Kan dekryptera data</span>
+                      </div>
+                    </div>
+                    
                     <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
                       📖 Läs Alices data
                     </Button>
@@ -645,6 +703,27 @@ const Index = () => {
               <div className="space-y-4">
                 <ActorCard name="Alice" role="Data Owner" status="active">
                   <div className="space-y-4">
+                    <div className="pt-2 border-t border-border">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Delad med:</p>
+                      <div className="flex gap-2">
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-success/10 text-success">
+                          <User className="w-3 h-3" />
+                          <span>Alice</span>
+                          <Check className="w-3 h-3" />
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-success/10 text-success">
+                          <User className="w-3 h-3" />
+                          <span>Bob</span>
+                          <Check className="w-3 h-3" />
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-success/10 text-success">
+                          <User className="w-3 h-3" />
+                          <span>Charlie</span>
+                          <Check className="w-3 h-3" />
+                        </div>
+                      </div>
+                    </div>
+                    
                     <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
                       📖 Läs min data
                     </Button>
@@ -655,13 +734,43 @@ const Index = () => {
               {/* Bob & Charlie - Höger */}
               <div className="space-y-4">
                 <ActorCard name="Bob" role="Mottagare" status={bobDecrypted ? "success" : "default"}>
-                  <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
-                    📖 Läs Alices data
-                  </Button>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <QrCode className="w-4 h-4 text-primary" />
+                      <span className="text-muted-foreground">Publik nyckel finns</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Lock className="w-4 h-4 text-destructive" />
+                      <span className="text-muted-foreground">Ser krypterad data</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <LockOpen className="w-4 h-4 text-success" />
+                      <span className="text-success font-medium">Kan dekryptera data</span>
+                    </div>
+                    
+                    <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
+                      📖 Läs Alices data
+                    </Button>
+                  </div>
                 </ActorCard>
 
                 <ActorCard name="Charlie" role="Mottagare" status={charlieDecrypted ? "success" : "default"}>
                   <div className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <QrCode className="w-4 h-4 text-primary" />
+                        <span className="text-muted-foreground">Publik nyckel finns</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Lock className="w-4 h-4 text-destructive" />
+                        <span className="text-muted-foreground">Ser krypterad data</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <LockOpen className="w-4 h-4 text-success" />
+                        <span className="text-success font-medium">Kan dekryptera data</span>
+                      </div>
+                    </div>
+                    
                     <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
                       📖 Läs Alices data
                     </Button>
@@ -710,6 +819,27 @@ const Index = () => {
               <div className="space-y-4">
                 <ActorCard name="Alice" role="Data Owner" status="active">
                   <div className="space-y-4">
+                    <div className="pt-2 border-t border-border">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Delad med:</p>
+                      <div className="flex gap-2">
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-success/10 text-success">
+                          <User className="w-3 h-3" />
+                          <span>Alice</span>
+                          <Check className="w-3 h-3" />
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-destructive/10 text-destructive">
+                          <User className="w-3 h-3" />
+                          <span>Bob</span>
+                          <X className="w-3 h-3" />
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-success/10 text-success">
+                          <User className="w-3 h-3" />
+                          <span>Charlie</span>
+                          <Check className="w-3 h-3" />
+                        </div>
+                      </div>
+                    </div>
+                    
                     <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
                       📖 Läs min data
                     </Button>
@@ -747,6 +877,21 @@ const Index = () => {
               <div className="space-y-4">
                 <ActorCard name="Bob" role="Mottagare" status="revoked">
                   <div className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <QrCode className="w-4 h-4 text-primary" />
+                        <span className="text-muted-foreground">Publik nyckel finns</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Lock className="w-4 h-4 text-destructive" />
+                        <span className="text-muted-foreground">Ser krypterad data</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Lock className="w-4 h-4 text-destructive" />
+                        <span className="text-destructive font-medium">Kan EJ dekryptera</span>
+                      </div>
+                    </div>
+                    
                     <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
                       📖 Försök läs Alices data
                     </Button>
@@ -785,11 +930,26 @@ const Index = () => {
                 </ActorCard>
 
                 <ActorCard name="Charlie" role="Mottagare" status={charlieDecrypted ? "success" : "default"}>
-                  <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
-                    📖 Läs Alices data
-                  </Button>
-                  <div className="mt-2 p-2 bg-success/10 border border-success/30 rounded text-xs text-success">
-                    ✓ Har fortfarande åtkomst
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <QrCode className="w-4 h-4 text-primary" />
+                      <span className="text-muted-foreground">Publik nyckel finns</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Lock className="w-4 h-4 text-destructive" />
+                      <span className="text-muted-foreground">Ser krypterad data</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <LockOpen className="w-4 h-4 text-success" />
+                      <span className="text-success font-medium">Kan dekryptera data</span>
+                    </div>
+                    
+                    <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
+                      📖 Läs Alices data
+                    </Button>
+                    <div className="mt-2 p-2 bg-success/10 border border-success/30 rounded text-xs text-success">
+                      ✓ Har fortfarande åtkomst
+                    </div>
                   </div>
                 </ActorCard>
               </div>
