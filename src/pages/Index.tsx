@@ -483,7 +483,6 @@ const Index = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="space-y-8">
-          <StepIndicator steps={steps} currentStep={step} />
 
           {/* Step 0: Introduction */}
           {step === 0 && (
@@ -582,6 +581,8 @@ const Index = () => {
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Card>
+
+              <StepIndicator steps={steps} currentStep={step} />
 
               {/* Concept explainers at bottom for mobile */}
               <div className="space-y-4 mt-12">
