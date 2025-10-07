@@ -15,6 +15,7 @@ interface ExplorePanelProps {
     hasAccess: boolean;
     decryptedData: any;
   } | null;
+  onReadAsActor?: (actorName: string, privateKey: CryptoKey) => Promise<void>;
   dataCID?: string;
   accessList: string[];
   allActors: Array<{ name: string; keyPair: KeyPair | null }>;
@@ -26,6 +27,7 @@ export const ExplorePanel = ({
   isOpen,
   onClose,
   selectedActor,
+  onReadAsActor,
   dataCID,
   accessList,
   allActors,
@@ -116,6 +118,15 @@ export const ExplorePanel = ({
                   variant={selectedActor.hasAccess ? "decrypted" : "encrypted"}
                   isEncrypted={!selectedActor.hasAccess}
                 />
+                {selectedActor.hasAccess && !selectedActor.decryptedData && selectedActor.keyPair && onReadAsActor && (
+                  <Button
+                    onClick={() => onReadAsActor(selectedActor.name, selectedActor.keyPair!.privateKey)}
+                    className="mt-3 w-full"
+                    size="sm"
+                  >
+                    Try to Read as {selectedActor.name}
+                  </Button>
+                )}
               </Card>
             </>
           )}

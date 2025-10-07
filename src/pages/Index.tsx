@@ -1087,33 +1087,43 @@ const Index = () => {
             />
           )}
 
-          {/* Data displays */}
+          {/* Encrypted Data display - simplified */}
           {step >= 1 && (
             <div className="space-y-8">
               <Card className="p-6 bg-muted/30">
-                <h3 className="font-semibold text-lg mb-4">Encrypted Data</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-lg">Encrypted Data on IPFS</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedActorForExplore(null);
+                      setExplorePanelOpen(true);
+                    }}
+                  >
+                    Explore Details
+                  </Button>
+                </div>
                 <DataDisplay title="Encrypted JSON" data={encryptedData} isEncrypted variant="encrypted" />
               </Card>
 
+              {/* Simplified actor cards grid */}
               <Card className="p-6 bg-muted/30">
                 <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                   <User className="w-5 h-5 text-primary" />
-                  Data Nodes - Each Actor's View
+                  Data Nodes
                 </h3>
                 <p className="text-sm text-muted-foreground mb-6">
-                  Each participant is an independent data node with their own key pair. They can only decrypt data if
-                  they're in the keyring.
+                  Click on any actor to see their keys, access status, and decrypted data.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {getAllActors().map((actor) => {
                     const hasAccess = accessList.includes(actor.name);
-                    const decryptedData = decryptedDataMap.get(actor.name);
-                    const isRevoked = actor.revoked;
 
                     return (
                       <Card
                         key={actor.name}
-                        className={`p-4 cursor-pointer hover:shadow-md transition-shadow ${
+                        className={`p-4 cursor-pointer hover:shadow-lg hover:scale-105 transition-all ${
                           hasAccess ? "border-primary/40 bg-primary/5" : "border-muted bg-muted/20"
                         }`}
                         onClick={() => {
@@ -1121,13 +1131,13 @@ const Index = () => {
                           setExplorePanelOpen(true);
                         }}
                       >
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-3">
                           <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            className={`w-12 h-12 rounded-full flex items-center justify-center ${
                               hasAccess ? "bg-primary/20" : "bg-muted"
                             }`}
                           >
-                            <User className={`w-5 h-5 ${hasAccess ? "text-primary" : "text-muted-foreground"}`} />
+                            <User className={`w-6 h-6 ${hasAccess ? "text-primary" : "text-muted-foreground"}`} />
                           </div>
                           <div className="flex-1">
                             <h4 className="font-semibold">{actor.name}</h4>
@@ -1147,19 +1157,6 @@ const Index = () => {
                             </div>
                           )}
                         </div>
-
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleReadAsActor(actor.name, actor.keyPair!.privateKey);
-                          }}
-                          disabled={!actor.keyPair || !encryptedData}
-                          className="mt-3 w-full"
-                          size="sm"
-                        >
-                          <Lock className="w-3 h-3 mr-2" />
-                          Try to Read as {actor.name}
-                        </Button>
                       </Card>
                     );
                   })}
@@ -1260,6 +1257,7 @@ const Index = () => {
           setExplorePanelOpen(false);
           setSelectedActorForExplore(null);
         }}
+        onReadAsActor={handleReadAsActor}
         selectedActor={
           selectedActorForExplore
             ? {
