@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
@@ -18,9 +18,20 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { KeyRingDisplay } from "@/components/KeyRingDisplay";
 
 const Index = () => {
-  // IPFS Storage
-  const [ipfsStorage] = useState(() => new IPFSStorage());
-  const [egendata] = useState(() => new EgendataClient(ipfsStorage));
+  // IPFS Storage - use useRef to ensure stable instances
+  const ipfsStorageRef = useRef<IPFSStorage>();
+  const egendataRef = useRef<EgendataClient>();
+  
+  if (!ipfsStorageRef.current) {
+    ipfsStorageRef.current = new IPFSStorage();
+  }
+  if (!egendataRef.current) {
+    egendataRef.current = new EgendataClient(ipfsStorageRef.current);
+  }
+  
+  const ipfsStorage = ipfsStorageRef.current;
+  const egendata = egendataRef.current;
+  
   const [ipfsReady, setIpfsReady] = useState(false);
   const [ipfsInitializing, setIpfsInitializing] = useState(false);
   const [ipfsError, setIpfsError] = useState<string>();
@@ -103,9 +114,9 @@ const Index = () => {
 
     return () => {
       mounted = false;
-      ipfsStorage.stop();
+      // Don't stop IPFS on unmount - it should persist for the session
     };
-  }, [ipfsStorage]);
+  }, []); // Empty deps - only run once on mount
 
   const handleGenerateKeys = async () => {
     if (!ipfsReady) {
