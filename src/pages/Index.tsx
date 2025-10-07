@@ -12,6 +12,7 @@ import { IPFSLink } from "@/components/IPFSLink";
 import { ConceptExplainer } from "@/components/ConceptExplainer";
 import { Footer } from "@/components/Footer";
 import { ExplorePanel } from "@/components/ExplorePanel";
+import { Header } from "@/components/Header";
 import { EgendataClient, IPFSStorage, type KeyPair } from "@/lib/egendata";
 import { encodeKeyForQR, decodeKeyFromQR, validateKeyData, qrKeyDataToJWK } from "@/lib/qr-key-exchange";
 import {
@@ -468,24 +469,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="border-b border-border bg-white sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <div
-                className="w-6 h-6 bg-white rounded-sm"
-                style={{
-                  backgroundImage: `repeating-linear-gradient(90deg, hsl(195 100% 52%) 0px, hsl(195 100% 52%) 2px, transparent 2px, transparent 4px),
-                                 repeating-linear-gradient(0deg, hsl(195 100% 52%) 0px, hsl(195 100% 52%) 2px, transparent 2px, transparent 4px)`,
-                }}
-              />
-            </div>
-            <h1 className="text-xl font-semibold tracking-tight">
-              egen<span className="text-primary">DATA</span>
-            </h1>
-          </div>
-        </div>
-      </div>
+      <Header onOpenExplorer={() => setExplorePanelOpen(true)} />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -642,7 +626,24 @@ const Index = () => {
                 </Button>
 
                 <div className="space-y-4 mt-6">
-                  <ActorCard name="Alice" role="Data Owner" status="active" align="left" />
+                  <ActorCard name="Alice" role="Data Owner" status="active" align="left">
+                    <div className="space-y-3 mt-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Keyring:</span>
+                        <span className="font-mono text-xs">Alice</span>
+                      </div>
+                      {alice && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReadAsActor("Alice", alice.privateKey)}
+                          className="w-full"
+                        >
+                          <Lock className="w-4 h-4 mr-2" /> Read Data as Alice
+                        </Button>
+                      )}
+                    </div>
+                  </ActorCard>
                   <ActorCard name="Bob" role="Recipient" status="default" align="right" />
                 </div>
               </Card>
@@ -704,8 +705,46 @@ const Index = () => {
                 </Button>
 
                 <div className="space-y-4 mt-6">
-                  <ActorCard name="Alice" role="Data Owner" status="active" align="left" />
-                  <ActorCard name="Bob" role="Recipient" status="success" align="right" />
+                  <ActorCard name="Alice" role="Data Owner" status="active" align="left">
+                    <div className="space-y-3 mt-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Keyring:</span>
+                        <span className="font-mono text-xs">Alice, Bob</span>
+                      </div>
+                      {alice && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReadAsActor("Alice", alice.privateKey)}
+                          className="w-full"
+                        >
+                          <Lock className="w-4 h-4 mr-2" /> Read Data as Alice
+                        </Button>
+                      )}
+                    </div>
+                  </ActorCard>
+                  <ActorCard name="Bob" role="Recipient" status="success" align="right">
+                    <div className="space-y-3 mt-4">
+                      {bob && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReadAsActor("Bob", bob.privateKey)}
+                          className="w-full"
+                        >
+                          <Lock className="w-4 h-4 mr-2" /> Read Data as Bob
+                        </Button>
+                      )}
+                      {decryptedDataMap.has("Bob") && (
+                        <div className="p-3 bg-success/10 border border-success/20 rounded-md">
+                          <p className="text-xs font-semibold text-success mb-2">✓ Decrypted Data:</p>
+                          <pre className="text-xs font-mono overflow-x-auto">
+                            {JSON.stringify(decryptedDataMap.get("Bob"), null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  </ActorCard>
                   <ActorCard name="Charlie" role="Recipient" status="default" align="left" />
                 </div>
               </Card>
@@ -796,9 +835,64 @@ const Index = () => {
                 </Button>
 
                 <div className="space-y-4 mt-6">
-                  <ActorCard name="Alice" role="Data Owner" status="active" align="left" />
-                  <ActorCard name="Bob" role="Revoked" status="revoked" align="right" />
-                  <ActorCard name="Charlie" role="Has Access" status="success" align="left" />
+                  <ActorCard name="Alice" role="Data Owner" status="active" align="left">
+                    <div className="space-y-3 mt-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Keyring:</span>
+                        <span className="font-mono text-xs">Alice, Bob, Charlie</span>
+                      </div>
+                      {alice && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReadAsActor("Alice", alice.privateKey)}
+                          className="w-full"
+                        >
+                          <Lock className="w-4 h-4 mr-2" /> Read Data as Alice
+                        </Button>
+                      )}
+                    </div>
+                  </ActorCard>
+                  <ActorCard name="Bob" role="Revoked" status="revoked" align="right">
+                    <div className="space-y-3 mt-4">
+                      {bob && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReadAsActor("Bob", bob.privateKey)}
+                          className="w-full"
+                        >
+                          <Lock className="w-4 h-4 mr-2" /> Try Read as Bob
+                        </Button>
+                      )}
+                    </div>
+                  </ActorCard>
+                  <ActorCard name="Charlie" role="Has Access" status="success" align="left">
+                    <div className="space-y-3 mt-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Keyring:</span>
+                        <span className="font-mono text-xs">Alice, Charlie</span>
+                      </div>
+                      {charlie && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReadAsActor("Charlie", charlie.privateKey)}
+                          className="w-full"
+                        >
+                          <Lock className="w-4 h-4 mr-2" /> Read Data as Charlie
+                        </Button>
+                      )}
+                      {decryptedDataMap.has("Charlie") && (
+                        <div className="p-3 bg-success/10 border border-success/20 rounded-md">
+                          <p className="text-xs font-semibold text-success mb-2">✓ Decrypted Data:</p>
+                          <pre className="text-xs font-mono overflow-x-auto">
+                            {JSON.stringify(decryptedDataMap.get("Charlie"), null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  </ActorCard>
                 </div>
               </Card>
 
@@ -934,9 +1028,47 @@ const Index = () => {
                 </div>
 
                 <div className="space-y-4 mt-6">
-                  <ActorCard name="Alice" role="Data Owner" status="active" align="left" />
+                  <ActorCard name="Alice" role="Data Owner" status="active" align="left">
+                    <div className="space-y-3 mt-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Keyring:</span>
+                        <span className="font-mono text-xs">Alice, Charlie</span>
+                      </div>
+                      {alice && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReadAsActor("Alice", alice.privateKey)}
+                          className="w-full"
+                        >
+                          <Lock className="w-4 h-4 mr-2" /> Read Data as Alice
+                        </Button>
+                      )}
+                    </div>
+                  </ActorCard>
                   <ActorCard name="Bob" role="Wants Access" status="default" align="right" />
-                  <ActorCard name="Charlie" role="Has Access" status="success" align="left" />
+                  <ActorCard name="Charlie" role="Has Access" status="success" align="left">
+                    <div className="space-y-3 mt-4">
+                      {charlie && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReadAsActor("Charlie", charlie.privateKey)}
+                          className="w-full"
+                        >
+                          <Lock className="w-4 h-4 mr-2" /> Read Data as Charlie
+                        </Button>
+                      )}
+                      {decryptedDataMap.has("Charlie") && (
+                        <div className="p-3 bg-success/10 border border-success/20 rounded-md">
+                          <p className="text-xs font-semibold text-success mb-2">✓ Decrypted Data:</p>
+                          <pre className="text-xs font-mono overflow-x-auto">
+                            {JSON.stringify(decryptedDataMap.get("Charlie"), null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  </ActorCard>
                 </div>
               </Card>
 
