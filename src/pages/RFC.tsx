@@ -522,6 +522,35 @@ const encryptedData = await new CompactEncrypt(
               Developers can grant API access to third-party services by sharing encrypted credentials, 
               and revoke access by removing the service from the keyring.
             </p>
+
+            <h3 className="text-2xl font-semibold mb-3">8.5 Personal AI Tools & Agents</h3>
+            <p className="text-muted-foreground mb-4">
+              AI assistants and personal agents require access to sensitive user information to provide relevant, 
+              contextualized responses. With Egendata, users can grant their AI agents secure access to continuously 
+              updated personal data (preferences, history, sensitive information) without exposing it to the AI provider's 
+              servers. As the user's information changes, the AI agent always accesses the latest encrypted data through 
+              the IPNS pointer, ensuring context remains current and relevant while maintaining complete user control 
+              over what information is shared.
+            </p>
+
+            <h3 className="text-2xl font-semibold mb-3">8.6 Data Sovereignty & Geopolitical Independence</h3>
+            <p className="text-muted-foreground mb-4">
+              In an era of shifting geopolitical power dynamics, individuals and organizations face the risk of losing 
+              access to their data due to platform shutdowns, sanctions, or political instability. Egendata ensures 
+              data sovereignty by storing encrypted information on decentralized networks that transcend national 
+              borders and corporate control. Users retain ownership and access regardless of geopolitical changes, 
+              preventing data loss from service provider failures or regulatory restrictions.
+            </p>
+
+            <h3 className="text-2xl font-semibold mb-3">8.7 Cross-Platform Data Migration</h3>
+            <p className="text-muted-foreground mb-4">
+              Users often become locked into platforms because their data cannot be easily transferred. Egendata enables 
+              seamless migration between services and applications. For example, a user can grant both Spotify and Apple 
+              Music write access to their Egendata-stored music preferences and favorites. As they use either service, 
+              their listening history, playlists, and favorites are synchronized through the shared encrypted keystone. 
+              This allows users to switch between platforms freely, try new services, or use multiple providers 
+              simultaneously, with all services accessing and updating the same canonical user data without vendor lock-in.
+            </p>
           </section>
 
           {/* 9. Future Extensions */}
