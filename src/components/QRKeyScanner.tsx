@@ -67,8 +67,8 @@ export const QRKeyScanner = ({ onScan, onClose }: QRKeyScannerProps) => {
     
     if (!trimmedInput) {
       toast({
-        title: "Tom inmatning",
-        description: "Ange nyckeldata",
+        title: "Empty input",
+        description: "Enter key data",
         variant: "destructive",
       });
       return;
@@ -83,7 +83,7 @@ export const QRKeyScanner = ({ onScan, onClose }: QRKeyScannerProps) => {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <ScanLine className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-card-foreground">Lägg till nyckel</h3>
+          <h3 className="font-semibold text-card-foreground">Add Key</h3>
         </div>
         <Button variant="ghost" size="sm" onClick={handleClose}>
           <X className="w-4 h-4" />
@@ -94,38 +94,38 @@ export const QRKeyScanner = ({ onScan, onClose }: QRKeyScannerProps) => {
         <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="scan" className="gap-2">
             <ScanLine className="w-4 h-4" />
-            Scanna QR
+            Scan QR
           </TabsTrigger>
           <TabsTrigger value="manual" className="gap-2">
             <Keyboard className="w-4 h-4" />
-            Klistra in
+            Paste
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="scan" className="space-y-4 mt-0">
           <div id="qr-reader" className="w-full"></div>
           <p className="text-xs text-muted-foreground text-center">
-            Rikta kameran mot QR-koden för att skanna
+            Point the camera at the QR code to scan
           </p>
         </TabsContent>
 
         <TabsContent value="manual" className="space-y-4 mt-0">
           <div className="space-y-2">
             <label className="text-sm font-medium text-card-foreground">
-              Klistra in nyckeldata (Base45):
+              Paste key data (Base45):
             </label>
             <textarea
-              placeholder="Base45-enkodad nyckeldata..."
+              placeholder="Base45-encoded key data..."
               value={manualInput}
               onChange={(e) => setManualInput(e.target.value)}
               className="w-full min-h-[120px] px-3 py-2 text-xs font-mono bg-muted border border-border rounded-md resize-none"
             />
             <p className="text-xs text-muted-foreground">
-              Klistra in den Base45-enkodade nyckeldatan här
+              Paste the Base45-encoded key data here
             </p>
           </div>
           <Button onClick={handleManualSubmit} className="w-full shadow-card">
-            Lägg till nyckel
+            Add Key
           </Button>
         </TabsContent>
       </Tabs>

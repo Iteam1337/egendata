@@ -19,19 +19,19 @@ export const UserCard = ({ name, hasAccess, canDecrypt, publicKeyPreview }: User
           </div>
           <div>
             <h3 className="font-semibold text-card-foreground">{name}</h3>
-            <p className="text-xs text-muted-foreground">Användare</p>
+            <p className="text-xs text-muted-foreground">User</p>
           </div>
         </div>
         <div className="flex gap-1">
           {hasAccess ? (
             <Badge variant="default" className="gap-1">
               <Key className="w-3 h-3" />
-              Åtkomst
+              Access
             </Badge>
           ) : (
             <Badge variant="secondary" className="gap-1">
               <Lock className="w-3 h-3" />
-              Ej åtkomst
+              No Access
             </Badge>
           )}
         </div>
@@ -41,7 +41,7 @@ export const UserCard = ({ name, hasAccess, canDecrypt, publicKeyPreview }: User
         <div className="mt-3 p-2 bg-muted rounded-md">
           <div className="flex items-center gap-2 mb-1">
             <Key className="w-3 h-3 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground">Publik nyckel</span>
+            <span className="text-xs font-medium text-muted-foreground">Public key</span>
           </div>
           <code className="text-xs text-foreground break-all">
             {publicKeyPreview}
@@ -53,12 +53,12 @@ export const UserCard = ({ name, hasAccess, canDecrypt, publicKeyPreview }: User
         {canDecrypt ? (
           <div className="flex items-center gap-1 text-success">
             <LockOpen className="w-4 h-4" />
-            <span className="font-medium">Kan dekryptera</span>
+            <span className="font-medium">Can decrypt</span>
           </div>
         ) : (
           <div className="flex items-center gap-1 text-muted-foreground">
             <Lock className="w-4 h-4" />
-            <span className="font-medium">Kan ej dekryptera</span>
+            <span className="font-medium">Cannot decrypt</span>
           </div>
         )}
       </div>

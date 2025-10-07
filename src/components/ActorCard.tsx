@@ -33,11 +33,11 @@ export const ActorCard = ({
   const getStatusBadge = () => {
     switch (status) {
       case "active":
-        return <Badge className="bg-primary">Aktiv</Badge>;
+        return <Badge className="bg-primary">Active</Badge>;
       case "success":
-        return <Badge className="bg-success">Åtkomst</Badge>;
+        return <Badge className="bg-success">Access</Badge>;
       case "revoked":
-        return <Badge variant="destructive">Återkallad</Badge>;
+        return <Badge variant="destructive">Revoked</Badge>;
       default:
         return null;
     }

@@ -15,8 +15,8 @@ export const IPFSLink = ({ cid, title = "IPFS Data" }: IPFSLinkProps) => {
   const handleCopy = (url: string, gateway: string) => {
     navigator.clipboard.writeText(url);
     toast({
-      title: "Kopierad!",
-      description: `${gateway} länk kopierad till urklipp`,
+      title: "Copied!",
+      description: `${gateway} link copied to clipboard`,
     });
   };
 
@@ -60,12 +60,12 @@ export const IPFSLink = ({ cid, title = "IPFS Data" }: IPFSLinkProps) => {
               className="text-xs"
             >
               <Copy className="w-3 h-3 mr-1" />
-              Kopiera
+              Copy
             </Button>
           </div>
           
           <p className="text-xs text-muted-foreground italic">
-            Klicka för att se den krypterade råa datan i IPFS explorer
+            Click to view the encrypted raw data in IPFS explorer
           </p>
         </div>
       </div>

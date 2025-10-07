@@ -20,8 +20,8 @@ export const QRKeyDisplay = ({ qrData, userName, publicKeyJWK }: QRKeyDisplayPro
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast({
-      title: "Kopierad!",
-      description: "Nyckeldata kopierad (Base45-format)",
+      title: "Copied!",
+      description: "Key data copied (Base45 format)",
     });
   };
 
@@ -29,7 +29,7 @@ export const QRKeyDisplay = ({ qrData, userName, publicKeyJWK }: QRKeyDisplayPro
     <Card className="p-6 bg-gradient-card shadow-card">
       <div className="flex items-center gap-2 mb-4">
         <QrCode className="w-5 h-5 text-primary" />
-        <h3 className="font-semibold text-card-foreground">QR-kod för {userName}</h3>
+        <h3 className="font-semibold text-card-foreground">QR Code for {userName}</h3>
         <Badge variant="default" className="ml-auto">Base45</Badge>
       </div>
       
@@ -50,7 +50,7 @@ export const QRKeyDisplay = ({ qrData, userName, publicKeyJWK }: QRKeyDisplayPro
         
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground">
-            Eller kopiera nyckeldatan:
+            Or copy the key data:
           </label>
           <div className="flex gap-2">
             <input
@@ -73,7 +73,7 @@ export const QRKeyDisplay = ({ qrData, userName, publicKeyJWK }: QRKeyDisplayPro
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Dela via QR-kod eller kopiera texten
+            Share via QR code or copy the text
           </p>
         </div>
       </div>

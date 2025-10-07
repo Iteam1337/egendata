@@ -15,7 +15,7 @@ export const IPFSStatus = ({ isInitialized, isInitializing, error }: IPFSStatusP
         <div className="flex items-center gap-2">
           <CloudOff className="w-4 h-4 text-destructive" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-destructive">IPFS-anslutning misslyckades</p>
+            <p className="text-sm font-medium text-destructive">IPFS connection failed</p>
             <p className="text-xs text-muted-foreground">{error}</p>
           </div>
         </div>
@@ -29,8 +29,8 @@ export const IPFSStatus = ({ isInitialized, isInitializing, error }: IPFSStatusP
         <div className="flex items-center gap-2">
           <Loader2 className="w-4 h-4 text-primary animate-spin" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-card-foreground">Startar IPFS-nod...</p>
-            <p className="text-xs text-muted-foreground">Detta kan ta några sekunder</p>
+            <p className="text-sm font-medium text-card-foreground">Starting IPFS node...</p>
+            <p className="text-xs text-muted-foreground">This may take a few seconds</p>
           </div>
         </div>
       </Card>
@@ -43,11 +43,11 @@ export const IPFSStatus = ({ isInitialized, isInitializing, error }: IPFSStatusP
         <div className="flex items-center gap-2">
           <Cloud className="w-4 h-4 text-success" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-success">IPFS-nod aktiv</p>
-            <p className="text-xs text-muted-foreground">Decentraliserad lagring aktiverad</p>
+            <p className="text-sm font-medium text-success">IPFS node active</p>
+            <p className="text-xs text-muted-foreground">Decentralized storage enabled</p>
           </div>
           <Badge variant="outline" className="border-success/30 text-success">
-            Ansluten
+            Connected
           </Badge>
         </div>
       </Card>

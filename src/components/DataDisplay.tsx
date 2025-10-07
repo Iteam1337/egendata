@@ -41,7 +41,7 @@ export const DataDisplay = ({ title, data, isEncrypted = false, variant = "origi
         </div>
         {isEncrypted && (
           <Badge variant="destructive" className="text-xs">
-            Krypterad
+            Encrypted
           </Badge>
         )}
       </div>
