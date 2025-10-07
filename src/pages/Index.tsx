@@ -260,16 +260,12 @@ const Index = () => {
       setAccessList(newAccessList);
       setStep(4);
 
-      // Auto-generate Bob's QR code for step 4
-      if (bob) {
-        const qrData = encodeKeyForQR("Bob", bob.publicKeyJWK);
-        setBobQRData(qrData);
-        setShowBobQR(true);
-      }
+      // Open explore panel instead of showing QR code
+      setExplorePanelOpen(true);
 
       toast({
         title: "Access revoked!",
-        description: "Alice removed Bob's access",
+        description: "Alice removed Bob's access. Open Explore Data to restore it.",
       });
     } catch (error) {
       toast({
@@ -1031,62 +1027,51 @@ const Index = () => {
             </div>
           )}
 
-          {/* Step 4: Re-grant to Bob via QR */}
+          {/* Step 4: Re-grant to Bob via manual key exchange */}
           {step === 4 && (
             <div className="animate-fade-in space-y-8">
               <Card className="p-6 bg-muted/30">
-                <h3 className="font-semibold text-lg mb-4">Step 4: Re-grant Access via QR Code</h3>
+                <h3 className="font-semibold text-lg mb-4">Step 4: Re-grant Access Manually</h3>
                 <p className="text-muted-foreground mb-6">
-                  Alice decides to give Bob another chance. Bob shares his public key via QR code, and Alice scans
-                  it to restore his access. This demonstrates peer-to-peer key exchange.
+                  Alice decides to give Bob another chance. To restore Bob&apos;s access, Alice needs to add Bob&apos;s public key back to her keyring.
                 </p>
 
-                <div className="mb-6">
-                  <h4 className="text-sm font-medium mb-3">Alice scans Bob's QR code (simulated):</h4>
-                  <Button
-                    onClick={async () => {
-                      if (!bob || !alice || !bobQRData) return;
-                      
-                      try {
-                        const keyData = decodeKeyFromQR(bobQRData);
-                        if (!validateKeyData(keyData)) {
-                          toast({
-                            title: "Invalid QR code",
-                            description: "QR code is too old or invalid",
-                            variant: "destructive",
-                          });
-                          return;
-                        }
-
-                        const { name, publicKeyJWK } = qrKeyDataToJWK(keyData);
-                        const recipientPublicKey = await egendata.importPublicKey(publicKeyJWK);
-                        await egendata.reGrantAccess(DATA_ID, name, recipientPublicKey, alice.privateKey);
-
-                        const newAccessList = await getAccessListNames();
-                        setAccessList(newAccessList);
-                        setBobRevoked(false);
-                        setStep(5);
-
-                        toast({
-                          title: "Access restored!",
-                          description: `${name} now has access again via QR code scan`,
-                        });
-                      } catch (error) {
-                        console.error("QR scan error:", error);
-                        toast({
-                          title: "Scan error",
-                          description: "Could not process QR code",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
-                    className="w-full"
-                    size="lg"
-                    disabled={bobRevoked === false}
-                  >
-                    <ScanLine className="w-4 h-4 mr-2" /> Alice Scans Bob's QR Code
-                  </Button>
+                <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Lightbulb className="w-4 h-4 text-primary" />
+                    How to restore Bob&apos;s access:
+                  </h4>
+                  <ol className="space-y-2 text-sm">
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary font-semibold mt-0.5">1.</span>
+                      <span>Click <strong>&quot;Explore Data&quot;</strong> button in the top right corner</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary font-semibold mt-0.5">2.</span>
+                      <span>Find <strong>Bob</strong> in the node list and click <strong>Copy</strong> to copy his public key</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary font-semibold mt-0.5">3.</span>
+                      <span>Find <strong>Alice</strong> in the node list and click <strong>Paste</strong></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary font-semibold mt-0.5">4.</span>
+                      <span>Paste Bob&apos;s key and click <strong>Grant Access</strong></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary font-semibold mt-0.5">5.</span>
+                      <span>Bob now has access again!</span>
+                    </li>
+                  </ol>
                 </div>
+
+                <Button
+                  onClick={() => setExplorePanelOpen(true)}
+                  className="w-full"
+                  size="lg"
+                >
+                  <Database className="w-4 h-4 mr-2" /> Open Explore Data
+                </Button>
 
 
                 <div className="space-y-4 mt-6">
