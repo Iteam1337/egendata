@@ -426,8 +426,8 @@ const Index = () => {
     }
   };
 
-  const handleAddRecipient = async () => {
-    const trimmedName = newRecipientName.trim();
+  const handleAddRecipient = async (recipientName: string) => {
+    const trimmedName = recipientName.trim();
     
     if (!trimmedName || !alice) {
       toast({
@@ -457,7 +457,6 @@ const Index = () => {
       setAccessList(newAccessList);
 
       setCustomRecipients([...customRecipients, { name: trimmedName, keyPair: newKeyPair }]);
-      setNewRecipientName("");
 
       toast({
         title: "Recipient added!",
