@@ -74,6 +74,16 @@ export const ExplorePanel = ({
             <Card className="p-4 bg-muted/30">
               <h3 className="font-semibold mb-3">Encrypted Data (Stored on IPFS)</h3>
               <DataDisplay title="" data={encryptedData} isEncrypted variant="encrypted" />
+              
+              {/* IPFS Link below encrypted data */}
+              {dataCID && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    The encrypted data is stored on IPFS with content-addressed immutable storage.
+                  </p>
+                  <IPFSLink cid={dataCID} title="View encrypted data on IPFS" />
+                </div>
+              )}
             </Card>
           )}
 
@@ -350,17 +360,6 @@ export const ExplorePanel = ({
               onAddKey={onAddKey}
             />
           </Card>
-
-          {/* IPFS Data Explorer */}
-          {dataCID && (
-            <Card className="p-4 bg-muted/30">
-              <h3 className="font-semibold mb-3">IPFS Storage</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                The encrypted data is stored on IPFS with content-addressed immutable storage.
-              </p>
-              <IPFSLink cid={dataCID} title="View encrypted data on IPFS" />
-            </Card>
-          )}
 
           {/* How it Works */}
           <Card className="p-4 bg-primary/5 border-primary/20">

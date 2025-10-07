@@ -1418,12 +1418,9 @@ const Index = () => {
 
                 {showAdvanced && (
                   <div className="space-y-6">
-                    {dataCID && (
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground">IPFS Data Explorer</h4>
-                        <IPFSLink cid={dataCID} title="Encrypted data in IPFS" />
-                      </div>
-                    )}
+                    <p className="text-sm text-muted-foreground">
+                      Advanced features and IPFS information are available in the Explore Data panel.
+                    </p>
                   </div>
                 )}
               </Card>
