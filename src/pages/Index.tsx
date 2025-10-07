@@ -628,9 +628,13 @@ const Index = () => {
                 <div className="space-y-4 mt-6">
                   <ActorCard name="Alice" role="Data Owner" status="active" align="left">
                     <div className="space-y-3 mt-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Keyring:</span>
-                        <span className="font-mono text-xs">Alice</span>
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs font-semibold mb-2">Who can read Alice's data:</p>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="text-xs px-2 py-1 bg-primary/20 text-primary rounded-full">
+                            Alice
+                          </span>
+                        </div>
                       </div>
                       {alice && (
                         <Button
@@ -642,9 +646,26 @@ const Index = () => {
                           <Lock className="w-4 h-4 mr-2" /> Read Data as Alice
                         </Button>
                       )}
+                      {decryptedDataMap.has("Alice") && (
+                        <div className="p-3 bg-success/10 border border-success/20 rounded-md">
+                          <p className="text-xs font-semibold text-success mb-2">✓ Decrypted Data:</p>
+                          <pre className="text-xs font-mono overflow-x-auto">
+                            {JSON.stringify(decryptedDataMap.get("Alice"), null, 2)}
+                          </pre>
+                        </div>
+                      )}
                     </div>
                   </ActorCard>
-                  <ActorCard name="Bob" role="Recipient" status="default" align="right" />
+                  <ActorCard name="Bob" role="Recipient" status="default" align="right">
+                    <div className="space-y-3 mt-4">
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs font-semibold mb-2">Can Bob read Alice's data?</p>
+                        <span className="text-xs px-2 py-1 bg-destructive/20 text-destructive rounded-full">
+                          No - not in keyring yet
+                        </span>
+                      </div>
+                    </div>
+                  </ActorCard>
                 </div>
               </Card>
 
@@ -707,9 +728,16 @@ const Index = () => {
                 <div className="space-y-4 mt-6">
                   <ActorCard name="Alice" role="Data Owner" status="active" align="left">
                     <div className="space-y-3 mt-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Keyring:</span>
-                        <span className="font-mono text-xs">Alice, Bob</span>
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs font-semibold mb-2">Who can read Alice's data:</p>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="text-xs px-2 py-1 bg-primary/20 text-primary rounded-full">
+                            Alice
+                          </span>
+                          <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
+                            Bob ✓
+                          </span>
+                        </div>
                       </div>
                       {alice && (
                         <Button
@@ -725,6 +753,12 @@ const Index = () => {
                   </ActorCard>
                   <ActorCard name="Bob" role="Recipient" status="success" align="right">
                     <div className="space-y-3 mt-4">
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs font-semibold mb-2">Can Bob read Alice's data?</p>
+                        <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
+                          Yes - Bob is in Alice's keyring ✓
+                        </span>
+                      </div>
                       {bob && (
                         <Button
                           variant="outline"
@@ -745,7 +779,16 @@ const Index = () => {
                       )}
                     </div>
                   </ActorCard>
-                  <ActorCard name="Charlie" role="Recipient" status="default" align="left" />
+                  <ActorCard name="Charlie" role="Recipient" status="default" align="left">
+                    <div className="space-y-3 mt-4">
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs font-semibold mb-2">Can Charlie read Alice's data?</p>
+                        <span className="text-xs px-2 py-1 bg-destructive/20 text-destructive rounded-full">
+                          No - not in keyring yet
+                        </span>
+                      </div>
+                    </div>
+                  </ActorCard>
                 </div>
               </Card>
 
@@ -837,9 +880,19 @@ const Index = () => {
                 <div className="space-y-4 mt-6">
                   <ActorCard name="Alice" role="Data Owner" status="active" align="left">
                     <div className="space-y-3 mt-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Keyring:</span>
-                        <span className="font-mono text-xs">Alice, Bob, Charlie</span>
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs font-semibold mb-2">Who can read Alice's data:</p>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="text-xs px-2 py-1 bg-primary/20 text-primary rounded-full">
+                            Alice
+                          </span>
+                          <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
+                            Bob ✓
+                          </span>
+                          <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
+                            Charlie ✓
+                          </span>
+                        </div>
                       </div>
                       {alice && (
                         <Button
@@ -855,6 +908,12 @@ const Index = () => {
                   </ActorCard>
                   <ActorCard name="Bob" role="Revoked" status="revoked" align="right">
                     <div className="space-y-3 mt-4">
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs font-semibold mb-2">Can Bob read Alice's data?</p>
+                        <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
+                          Yes - still in keyring
+                        </span>
+                      </div>
                       {bob && (
                         <Button
                           variant="outline"
@@ -869,9 +928,11 @@ const Index = () => {
                   </ActorCard>
                   <ActorCard name="Charlie" role="Has Access" status="success" align="left">
                     <div className="space-y-3 mt-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Keyring:</span>
-                        <span className="font-mono text-xs">Alice, Charlie</span>
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs font-semibold mb-2">Can Charlie read Alice's data?</p>
+                        <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
+                          Yes - Charlie is in Alice's keyring ✓
+                        </span>
                       </div>
                       {charlie && (
                         <Button
@@ -1027,12 +1088,23 @@ const Index = () => {
                   </Button>
                 </div>
 
+
                 <div className="space-y-4 mt-6">
                   <ActorCard name="Alice" role="Data Owner" status="active" align="left">
                     <div className="space-y-3 mt-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Keyring:</span>
-                        <span className="font-mono text-xs">Alice, Charlie</span>
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs font-semibold mb-2">Who can read Alice's data:</p>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="text-xs px-2 py-1 bg-primary/20 text-primary rounded-full">
+                            Alice
+                          </span>
+                          <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
+                            Charlie ✓
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Bob was removed from keyring
+                        </p>
                       </div>
                       {alice && (
                         <Button
@@ -1046,9 +1118,24 @@ const Index = () => {
                       )}
                     </div>
                   </ActorCard>
-                  <ActorCard name="Bob" role="Wants Access" status="default" align="right" />
+                  <ActorCard name="Bob" role="Wants Access" status="default" align="right">
+                    <div className="space-y-3 mt-4">
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs font-semibold mb-2">Can Bob read Alice's data?</p>
+                        <span className="text-xs px-2 py-1 bg-destructive/20 text-destructive rounded-full">
+                          No - removed from keyring
+                        </span>
+                      </div>
+                    </div>
+                  </ActorCard>
                   <ActorCard name="Charlie" role="Has Access" status="success" align="left">
                     <div className="space-y-3 mt-4">
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs font-semibold mb-2">Can Charlie read Alice's data?</p>
+                        <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
+                          Yes - still in Alice's keyring ✓
+                        </span>
+                      </div>
                       {charlie && (
                         <Button
                           variant="outline"

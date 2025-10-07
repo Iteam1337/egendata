@@ -78,7 +78,7 @@ export const ExplorePanel = ({
           <Card className="p-4 bg-muted/30">
             <h3 className="font-semibold mb-3">All Data Nodes</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Click on any actor to view their detailed information
+              <strong>Copy</strong> a node's key to share it. <strong>Paste</strong> another node's key to grant them access to this node's data.
             </p>
             <div className="space-y-2">
               {allActors.map((actor) => {
@@ -114,7 +114,24 @@ export const ExplorePanel = ({
                             {actor.name === "Alice" ? "Data Owner" : "Recipient"}
                           </p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1">
+                          {/* Copy button - copy this node's public key */}
+                          {actor.keyPair && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard.writeText(onGenerateQR(actor.name));
+                                toast({
+                                  title: "Copied!",
+                                  description: `${actor.name}'s public key copied`,
+                                });
+                              }}
+                              title={`Copy ${actor.name}'s public key`}
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          )}
                           {/* Show QR button */}
                           {actor.keyPair && (
                             <Button
@@ -126,63 +143,47 @@ export const ExplorePanel = ({
                               <QrCode className="w-4 h-4" />
                             </Button>
                           )}
-                          {/* Paste button to grant access */}
-                          {actor.name !== "Alice" && (
+                          {/* Paste button - paste another node's key to grant them access to this node's data */}
+                          {actor.name === "Alice" && (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => setShowScannerFor(showingScanner ? null : actor.name)}
-                              title="Paste key to grant access"
+                              title={`Paste key to grant access to ${actor.name}'s data`}
                             >
                               <ClipboardPaste className="w-4 h-4" />
                             </Button>
                           )}
                         </div>
-                        {hasAccess ? (
-                          <div className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
-                            Access
-                          </div>
-                        ) : (
-                          <div className="text-xs bg-destructive/20 text-destructive px-2 py-1 rounded-full">
-                            No Access
-                          </div>
-                        )}
                       </div>
+
 
                       {/* QR Code Display */}
                       {showingQR && actor.keyPair && (
-                        <div className="mt-4 p-4 bg-white rounded-lg flex flex-col items-center">
+                        <div className="mt-4 p-4 bg-white rounded-lg flex flex-col items-center border-2 border-primary/20">
                           <QRCodeSVG value={onGenerateQR(actor.name)} size={200} level="M" />
-                          <p className="text-xs text-muted-foreground mt-2">
+                          <p className="text-xs text-muted-foreground mt-2 mb-3">
                             {actor.name}'s Public Key
                           </p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-3"
-                            onClick={() => {
-                              navigator.clipboard.writeText(onGenerateQR(actor.name));
-                              toast({
-                                title: "Copied!",
-                                description: `${actor.name}'s public key copied to clipboard`,
-                              });
-                            }}
-                          >
-                            <Copy className="w-4 h-4 mr-2" /> Copy Key
-                          </Button>
+                          <p className="text-xs text-center text-muted-foreground mb-3">
+                            Others can scan this QR or copy the key below to request access to {actor.name}'s data
+                          </p>
                         </div>
                       )}
 
                       {/* Scan/Paste Interface */}
                       {showingScanner && (
-                        <div className="mt-4 space-y-3">
+                        <div className="mt-4 p-4 bg-primary/5 border-2 border-primary/20 rounded-lg space-y-3">
                           <div className="space-y-2">
-                            <label className="text-xs text-muted-foreground">
-                              Paste public key data to grant {actor.name} access:
+                            <label className="text-sm font-medium">
+                              Grant access to {actor.name}'s data:
                             </label>
+                            <p className="text-xs text-muted-foreground">
+                              Paste another node's public key to allow them to read {actor.name}'s data
+                            </p>
                             <input
                               type="text"
-                              placeholder="Paste public key data here..."
+                              placeholder="Paste public key here..."
                               value={pasteQRInput}
                               onChange={(e) => setPasteQRInput(e.target.value)}
                               className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background"
@@ -200,7 +201,7 @@ export const ExplorePanel = ({
                                 className="flex-1"
                                 disabled={!pasteQRInput}
                               >
-                                Grant Access to {actor.name}
+                                <ClipboardPaste className="w-4 h-4 mr-2" /> Grant Access
                               </Button>
                               <Button
                                 onClick={() => setShowScannerFor(null)}
