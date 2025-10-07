@@ -472,7 +472,34 @@ const encryptedData = await new CompactEncrypt(
               The encrypted data is stored as JWE (JSON Web Encryption) compact serialization.
             </p>
 
-            <h3 className="text-2xl font-semibold mb-3">7.3 QR Code Key Exchange</h3>
+            <h3 className="text-2xl font-semibold mb-3">7.3 Performance Optimization with IPFS PubSub</h3>
+            <p className="text-muted-foreground mb-4">
+              IPFS supports a publish-subscribe (PubSub) pattern that significantly improves performance for 
+              real-time data updates:
+            </p>
+            <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
+              <li><strong>Automatic notifications:</strong> When data is updated, all subscribed nodes are automatically notified</li>
+              <li><strong>No polling overhead:</strong> Nodes don't need to continuously check if data has changed</li>
+              <li><strong>Reduced latency:</strong> Updates propagate immediately to all subscribers</li>
+              <li><strong>Network efficiency:</strong> Only changed data is communicated, not repeated queries</li>
+            </ul>
+            <Card className="p-4 mb-6 bg-green-50 border-green-200">
+              <p className="text-sm text-green-900 mb-3">
+                <strong>Implementation:</strong> Clients can subscribe to IPNS names to receive real-time notifications 
+                when the data owner updates their keystone. This eliminates the need for periodic polling and ensures 
+                that all authorized recipients stay synchronized with minimal overhead.
+              </p>
+              <pre className="text-xs bg-background p-4 rounded overflow-x-auto mt-3">
+{`// Example: Subscribe to IPNS updates
+ipfs.pubsub.subscribe(ipnsName, (msg) => {
+  // Automatically fetch and decrypt new version
+  const newCID = await ipfs.name.resolve(ipnsName);
+  const updatedData = await fetchAndDecrypt(newCID);
+});`}
+              </pre>
+            </Card>
+
+            <h3 className="text-2xl font-semibold mb-3">7.4 QR Code Key Exchange</h3>
             <p className="text-muted-foreground mb-4">
               Public keys can be shared via QR codes for peer-to-peer key exchange. The demo implementation uses 
               Base45 encoding for QR code compatibility.
