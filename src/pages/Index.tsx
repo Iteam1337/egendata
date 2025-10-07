@@ -11,7 +11,9 @@ import { IPFSStatus } from "@/components/IPFSStatus";
 import { IPFSLink } from "@/components/IPFSLink";
 import { EgendataClient, IPFSStorage, type KeyPair } from "@/lib/egendata";
 import { encodeKeyForQR, decodeKeyFromQR, validateKeyData, qrKeyDataToJWK } from "@/lib/qr-key-exchange";
-import { ArrowRight, Check, QrCode, ScanLine, Lock, LockOpen, User, X } from "lucide-react";
+import { ArrowRight, Check, QrCode, ScanLine, Lock, LockOpen, User, X, Key } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { KeyRingDisplay } from "@/components/KeyRingDisplay";
 
 const Index = () => {
   // IPFS Storage
@@ -55,6 +57,18 @@ const Index = () => {
 
   const DATA_ID = "alice-sensitive-data";
   const steps = ["Alice har data", "Dela med Bob", "Dela med Charlie", "Återkalla Bob", "Återge till Bob"];
+  
+  // Hämta nyckelringsinformation
+  const getAccessListNames = async () => {
+    try {
+      const recipients = await egendata.listRecipients(DATA_ID);
+      return recipients;
+    } catch {
+      return [];
+    }
+  };
+  
+  const [accessList, setAccessList] = useState<string[]>([]);
 
   // Initialisera IPFS vid start
   useEffect(() => {
@@ -130,6 +144,8 @@ const Index = () => {
         console.log(`✅ Data lagrad med CID: ${cid}`);
       }
       
+      const newAccessList = await getAccessListNames();
+      setAccessList(newAccessList);
       setStep(1);
       
       toast({
@@ -157,6 +173,8 @@ const Index = () => {
         alice.privateKey
       );
       
+      const newAccessList = await getAccessListNames();
+      setAccessList(newAccessList);
       setStep(2);
       
       toast({
@@ -183,6 +201,8 @@ const Index = () => {
         alice.privateKey
       );
       
+      const newAccessList = await getAccessListNames();
+      setAccessList(newAccessList);
       setStep(3);
       
       toast({
@@ -203,6 +223,8 @@ const Index = () => {
       await egendata.revokeAccess(DATA_ID, "Bob");
       setBobRevoked(true);
       setBobDecrypted(null);
+      const newAccessList = await getAccessListNames();
+      setAccessList(newAccessList);
       setStep(4);
       
       toast({
@@ -223,6 +245,8 @@ const Index = () => {
       await egendata.revokeAccess(DATA_ID, "Charlie");
       setCharlieRevoked(true);
       setCharlieDecrypted(null);
+      const newAccessList = await getAccessListNames();
+      setAccessList(newAccessList);
       
       toast({
         title: "Åtkomst återkallad!",
@@ -360,6 +384,9 @@ const Index = () => {
         alice.privateKey
       );
       
+      const newAccessList = await getAccessListNames();
+      setAccessList(newAccessList);
+      
       if (name === "Bob") {
         setBobRevoked(false);
         setStep(5);
@@ -405,6 +432,9 @@ const Index = () => {
         alice.privateKey
       );
       
+      const newAccessList = await getAccessListNames();
+      setAccessList(newAccessList);
+      
       // Lägg till i listan
       setCustomRecipients([...customRecipients, { name: newRecipientName, keyPair: newKeyPair }]);
       setNewRecipientName("");
@@ -427,6 +457,8 @@ const Index = () => {
     try {
       await egendata.revokeAccess(DATA_ID, recipientName);
       setCustomRecipients(customRecipients.filter(r => r.name !== recipientName));
+      const newAccessList = await getAccessListNames();
+      setAccessList(newAccessList);
       
       toast({
         title: "Åtkomst återkallad",
@@ -524,18 +556,29 @@ const Index = () => {
                       variant="original"
                     />
                     
-                    <div className="pt-3 border-t border-border">
-                      <p className="text-xs font-medium text-muted-foreground mb-2">Delad med:</p>
-                      <div className="flex gap-2">
-                        <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-success/10 text-success">
-                          <User className="w-3 h-3" />
-                          <span>Alice (själv)</span>
-                          <Check className="w-3 h-3" />
-                        </div>
-                        <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-muted text-muted-foreground">
-                          <User className="w-3 h-3" />
-                          <span>Bob</span>
-                          <X className="w-3 h-3" />
+                    <div className="pt-3 border-t border-border space-y-3">
+                      <KeyRingDisplay 
+                        recipients={accessList} 
+                        getKeyPair={(name) => {
+                          if (name === "Alice") return alice || undefined;
+                          if (name === "Bob") return bob || undefined;
+                          if (name === "Charlie") return charlie || undefined;
+                          return customRecipients.find(r => r.name === name)?.keyPair;
+                        }}
+                      />
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2">Status:</p>
+                        <div className="flex gap-2">
+                          <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-success/10 text-success">
+                            <User className="w-3 h-3" />
+                            <span>Alice (själv)</span>
+                            <Check className="w-3 h-3" />
+                          </div>
+                          <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-muted text-muted-foreground">
+                            <User className="w-3 h-3" />
+                            <span>Bob</span>
+                            <X className="w-3 h-3" />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -640,18 +683,27 @@ const Index = () => {
               <div className="space-y-4">
                 <ActorCard name="Bob" role="Mottagare" status={bobDecrypted ? "success" : "default"}>
                   <div className="space-y-4">
-                    <div className="space-y-3">
+                    <div className="space-y-3 pb-3 border-b border-border">
                       <div className="flex items-center gap-2 text-sm">
                         <QrCode className="w-4 h-4 text-primary" />
                         <span className="text-muted-foreground">Publik nyckel finns</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
-                        <Lock className="w-4 h-4 text-destructive" />
-                        <span className="text-muted-foreground">Ser krypterad data</span>
+                        <Lock className="w-4 h-4 text-warning" />
+                        <span className="text-muted-foreground">Ser krypterad data från IPFS</span>
                       </div>
+                      <KeyRingDisplay 
+                        recipients={accessList} 
+                        getKeyPair={(name) => {
+                          if (name === "Alice") return alice || undefined;
+                          if (name === "Bob") return bob || undefined;
+                          if (name === "Charlie") return charlie || undefined;
+                          return customRecipients.find(r => r.name === name)?.keyPair;
+                        }}
+                      />
                       <div className="flex items-center gap-2 text-sm">
                         <LockOpen className="w-4 h-4 text-success" />
-                        <span className="text-success font-medium">Kan dekryptera data</span>
+                        <span className="text-success font-medium">Kan dekryptera (Bobs nyckel finns i nyckelring)</span>
                       </div>
                     </div>
                     
@@ -735,17 +787,28 @@ const Index = () => {
               <div className="space-y-4">
                 <ActorCard name="Bob" role="Mottagare" status={bobDecrypted ? "success" : "default"}>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <QrCode className="w-4 h-4 text-primary" />
-                      <span className="text-muted-foreground">Publik nyckel finns</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Lock className="w-4 h-4 text-destructive" />
-                      <span className="text-muted-foreground">Ser krypterad data</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <LockOpen className="w-4 h-4 text-success" />
-                      <span className="text-success font-medium">Kan dekryptera data</span>
+                    <div className="space-y-3 pb-3 border-b border-border">
+                      <div className="flex items-center gap-2 text-sm">
+                        <QrCode className="w-4 h-4 text-primary" />
+                        <span className="text-muted-foreground">Publik nyckel finns</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Lock className="w-4 h-4 text-warning" />
+                        <span className="text-muted-foreground">Ser krypterad data från IPFS</span>
+                      </div>
+                      <KeyRingDisplay 
+                        recipients={accessList} 
+                        getKeyPair={(name) => {
+                          if (name === "Alice") return alice || undefined;
+                          if (name === "Bob") return bob || undefined;
+                          if (name === "Charlie") return charlie || undefined;
+                          return customRecipients.find(r => r.name === name)?.keyPair;
+                        }}
+                      />
+                      <div className="flex items-center gap-2 text-sm">
+                        <LockOpen className="w-4 h-4 text-success" />
+                        <span className="text-success font-medium">Kan dekryptera (Bobs nyckel finns i nyckelring)</span>
+                      </div>
                     </div>
                     
                     <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
@@ -756,18 +819,27 @@ const Index = () => {
 
                 <ActorCard name="Charlie" role="Mottagare" status={charlieDecrypted ? "success" : "default"}>
                   <div className="space-y-4">
-                    <div className="space-y-3">
+                    <div className="space-y-3 pb-3 border-b border-border">
                       <div className="flex items-center gap-2 text-sm">
                         <QrCode className="w-4 h-4 text-primary" />
                         <span className="text-muted-foreground">Publik nyckel finns</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
-                        <Lock className="w-4 h-4 text-destructive" />
-                        <span className="text-muted-foreground">Ser krypterad data</span>
+                        <Lock className="w-4 h-4 text-warning" />
+                        <span className="text-muted-foreground">Ser krypterad data från IPFS</span>
                       </div>
+                      <KeyRingDisplay 
+                        recipients={accessList} 
+                        getKeyPair={(name) => {
+                          if (name === "Alice") return alice || undefined;
+                          if (name === "Bob") return bob || undefined;
+                          if (name === "Charlie") return charlie || undefined;
+                          return customRecipients.find(r => r.name === name)?.keyPair;
+                        }}
+                      />
                       <div className="flex items-center gap-2 text-sm">
                         <LockOpen className="w-4 h-4 text-success" />
-                        <span className="text-success font-medium">Kan dekryptera data</span>
+                        <span className="text-success font-medium">Kan dekryptera (Charlies nyckel finns i nyckelring)</span>
                       </div>
                     </div>
                     
@@ -877,18 +949,27 @@ const Index = () => {
               <div className="space-y-4">
                 <ActorCard name="Bob" role="Mottagare" status="revoked">
                   <div className="space-y-4">
-                    <div className="space-y-3">
+                    <div className="space-y-3 pb-3 border-b border-border">
                       <div className="flex items-center gap-2 text-sm">
                         <QrCode className="w-4 h-4 text-primary" />
                         <span className="text-muted-foreground">Publik nyckel finns</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
-                        <Lock className="w-4 h-4 text-destructive" />
-                        <span className="text-muted-foreground">Ser krypterad data</span>
+                        <Lock className="w-4 h-4 text-warning" />
+                        <span className="text-muted-foreground">Ser krypterad data från IPFS</span>
                       </div>
+                      <KeyRingDisplay 
+                        recipients={accessList} 
+                        getKeyPair={(name) => {
+                          if (name === "Alice") return alice || undefined;
+                          if (name === "Bob") return bob || undefined;
+                          if (name === "Charlie") return charlie || undefined;
+                          return customRecipients.find(r => r.name === name)?.keyPair;
+                        }}
+                      />
                       <div className="flex items-center gap-2 text-sm">
                         <Lock className="w-4 h-4 text-destructive" />
-                        <span className="text-destructive font-medium">Kan EJ dekryptera</span>
+                        <span className="text-destructive font-medium">Kan EJ dekryptera (Bobs nyckel saknas i nyckelring)</span>
                       </div>
                     </div>
                     
@@ -931,17 +1012,28 @@ const Index = () => {
 
                 <ActorCard name="Charlie" role="Mottagare" status={charlieDecrypted ? "success" : "default"}>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <QrCode className="w-4 h-4 text-primary" />
-                      <span className="text-muted-foreground">Publik nyckel finns</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Lock className="w-4 h-4 text-destructive" />
-                      <span className="text-muted-foreground">Ser krypterad data</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <LockOpen className="w-4 h-4 text-success" />
-                      <span className="text-success font-medium">Kan dekryptera data</span>
+                    <div className="space-y-3 pb-3 border-b border-border">
+                      <div className="flex items-center gap-2 text-sm">
+                        <QrCode className="w-4 h-4 text-primary" />
+                        <span className="text-muted-foreground">Publik nyckel finns</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Lock className="w-4 h-4 text-warning" />
+                        <span className="text-muted-foreground">Ser krypterad data från IPFS</span>
+                      </div>
+                      <KeyRingDisplay 
+                        recipients={accessList} 
+                        getKeyPair={(name) => {
+                          if (name === "Alice") return alice || undefined;
+                          if (name === "Bob") return bob || undefined;
+                          if (name === "Charlie") return charlie || undefined;
+                          return customRecipients.find(r => r.name === name)?.keyPair;
+                        }}
+                      />
+                      <div className="flex items-center gap-2 text-sm">
+                        <LockOpen className="w-4 h-4 text-success" />
+                        <span className="text-success font-medium">Kan dekryptera (Charlies nyckel finns i nyckelring)</span>
+                      </div>
                     </div>
                     
                     <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
@@ -1002,6 +1094,30 @@ const Index = () => {
 
               <ActorCard name="Bob" role="Mottagare" status={bobDecrypted ? "success" : "default"}>
                 <div className="space-y-4">
+                  <div className="space-y-3 pb-3 border-b border-border">
+                    <div className="flex items-center gap-2 text-sm">
+                      <QrCode className="w-4 h-4 text-primary" />
+                      <span className="text-muted-foreground">Publik nyckel finns</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Lock className="w-4 h-4 text-warning" />
+                      <span className="text-muted-foreground">Ser krypterad data från IPFS</span>
+                    </div>
+                    <KeyRingDisplay 
+                      recipients={accessList} 
+                      getKeyPair={(name) => {
+                        if (name === "Alice") return alice || undefined;
+                        if (name === "Bob") return bob || undefined;
+                        if (name === "Charlie") return charlie || undefined;
+                        return customRecipients.find(r => r.name === name)?.keyPair;
+                      }}
+                    />
+                    <div className="flex items-center gap-2 text-sm">
+                      <LockOpen className="w-4 h-4 text-success" />
+                      <span className="text-success font-medium">Kan dekryptera (Bobs nyckel finns i nyckelring)</span>
+                    </div>
+                  </div>
+                  
                   <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
                     📖 Läs som Bob
                   </Button>
@@ -1011,6 +1127,47 @@ const Index = () => {
                       data={JSON.stringify(bobDecrypted, null, 2)}
                       variant="decrypted"
                     />
+                  )}
+                </div>
+              </ActorCard>
+        
+              <ActorCard name="Charlie" role="Mottagare" status={charlieDecrypted ? "success" : "default"}>
+                <div className="space-y-4">
+                  <div className="space-y-3 pb-3 border-b border-border">
+                    <div className="flex items-center gap-2 text-sm">
+                      <QrCode className="w-4 h-4 text-primary" />
+                      <span className="text-muted-foreground">Publik nyckel finns</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Lock className="w-4 h-4 text-warning" />
+                      <span className="text-muted-foreground">Ser krypterad data från IPFS</span>
+                    </div>
+                    <KeyRingDisplay 
+                      recipients={accessList} 
+                      getKeyPair={(name) => {
+                        if (name === "Alice") return alice || undefined;
+                        if (name === "Bob") return bob || undefined;
+                        if (name === "Charlie") return charlie || undefined;
+                        return customRecipients.find(r => r.name === name)?.keyPair;
+                      }}
+                    />
+                    <div className="flex items-center gap-2 text-sm">
+                      <LockOpen className="w-4 h-4 text-success" />
+                      <span className="text-success font-medium">Kan dekryptera (Charlies nyckel finns i nyckelring)</span>
+                    </div>
+                  </div>
+                  
+                  <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
+                    📖 Läs som Charlie
+                  </Button>
+                </div>
+              </ActorCard>
+            </div>
+            
+            <Button variant="outline" onClick={() => setStep(0)}>
+              Återställ berättelsen
+            </Button>
+          </div>
         )}
 
         {/* Avancerade funktioner - efter huvudberättelsen */}
@@ -1127,47 +1284,6 @@ const Index = () => {
                 </div>
               )}
             </Card>
-          </div>
-        )}
-                </div>
-              </ActorCard>
-
-              <ActorCard name="Charlie" role="Mottagare" status={charlieDecrypted ? "success" : "default"}>
-                <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
-                  📖 Läs
-                </Button>
-              </ActorCard>
-            </div>
-
-            <Card className="p-6 bg-success/10 border-success">
-              <h3 className="font-semibold text-success mb-4">Berättelsen är klar!</h3>
-              <p className="text-muted-foreground mb-4">
-                Du har nu sett hela flödet: Alice skapade känslig data, delade den med Bob och Charlie, 
-                återkallade Bobs åtkomst när hon ångrade sig, och gav honom sedan nytt försök via QR-kod.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Detta visar kraften i decentraliserad datakontroll - Alice har full kontroll över vem som kan läsa hennes data, 
-                när som helst, utan någon central server.
-              </p>
-            </Card>
-
-            <div className="flex gap-4">
-              <Button variant="outline" onClick={() => {
-                setStep(0);
-                setEncryptedData("");
-                setAliceDecrypted(null);
-                setBobDecrypted(null);
-                setCharlieDecrypted(null);
-                setBobRevoked(false);
-                setCharlieRevoked(false);
-                setShowBobQR(false);
-                setShowCharlieQR(false);
-                setShowScanner(false);
-                setScanningFor(null);
-              }}>
-                Börja om
-              </Button>
-            </div>
           </div>
         )}
         </div>
