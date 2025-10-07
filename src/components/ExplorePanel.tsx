@@ -69,24 +69,6 @@ export const ExplorePanel = ({
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Encrypted Data Display */}
-          {encryptedData && (
-            <Card className="p-4 bg-muted/30">
-              <h3 className="font-semibold mb-3">Encrypted Data (Stored on IPFS)</h3>
-              <DataDisplay title="" data={encryptedData} isEncrypted variant="encrypted" />
-              
-              {/* IPFS Link below encrypted data */}
-              {dataCID && (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-sm text-muted-foreground mb-3">
-                    The encrypted data is stored on IPFS with content-addressed immutable storage.
-                  </p>
-                  <IPFSLink cid={dataCID} title="View encrypted data on IPFS" />
-                </div>
-              )}
-            </Card>
-          )}
-
           {/* All Actors List */}
           <Card className="p-4 bg-muted/30">
             <h3 className="font-semibold mb-3">All Data Nodes</h3>
@@ -371,6 +353,24 @@ export const ExplorePanel = ({
               <li>• Access changes are reflected via new IPFS CIDs</li>
             </ul>
           </Card>
+
+          {/* Encrypted Data Display */}
+          {encryptedData && (
+            <Card className="p-4 bg-muted/30">
+              <h3 className="font-semibold mb-3">Encrypted Data (Stored on IPFS)</h3>
+              <DataDisplay title="" data={encryptedData} isEncrypted variant="encrypted" />
+              
+              {/* IPFS Link below encrypted data */}
+              {dataCID && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    The encrypted data is stored on IPFS with content-addressed immutable storage.
+                  </p>
+                  <IPFSLink cid={dataCID} title="View encrypted data on IPFS" />
+                </div>
+              )}
+            </Card>
+          )}
         </div>
       </div>
     </>
