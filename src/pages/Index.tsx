@@ -49,9 +49,10 @@ const Index = () => {
   
   const [encryptedData, setEncryptedData] = useState<string>("");
   const [dataCID, setDataCID] = useState<string>("");
-  const [bobDecrypted, setBobDecrypted] = useState<object | null>(null);
-  const [charlieDecrypted, setCharlieDecrypted] = useState<object | null>(null);
-  const [aliceDecrypted, setAliceDecrypted] = useState<object | null>(null);
+  
+  // Decrypted data for all actors
+  const [decryptedDataMap, setDecryptedDataMap] = useState<Map<string, object>>(new Map());
+  
   const [bobRevoked, setBobRevoked] = useState(false);
   const [charlieRevoked, setCharlieRevoked] = useState(false);
   
@@ -78,6 +79,21 @@ const Index = () => {
     } catch {
       return [];
     }
+  };
+
+  // Helper to get all actors including custom recipients
+  const getAllActors = () => {
+    const actors = [
+      { name: "Alice", keyPair: alice, revoked: false },
+      { name: "Bob", keyPair: bob, revoked: bobRevoked },
+      { name: "Charlie", keyPair: charlie, revoked: charlieRevoked },
+      ...customRecipients.map(r => ({ 
+        name: r.name, 
+        keyPair: r.keyPair, 
+        revoked: !accessList.includes(r.name) 
+      }))
+    ];
+    return actors.filter(a => a.keyPair);
   };
 
   const [accessList, setAccessList] = useState<string[]>([]);
@@ -219,7 +235,11 @@ const Index = () => {
     try {
       await egendata.revokeAccess(DATA_ID, "Bob");
       setBobRevoked(true);
-      setBobDecrypted(null);
+      setDecryptedDataMap(prev => {
+        const newMap = new Map(prev);
+        newMap.delete("Bob");
+        return newMap;
+      });
       const newAccessList = await getAccessListNames();
       setAccessList(newAccessList);
       setStep(4);
@@ -241,7 +261,11 @@ const Index = () => {
     try {
       await egendata.revokeAccess(DATA_ID, "Charlie");
       setCharlieRevoked(true);
-      setCharlieDecrypted(null);
+      setDecryptedDataMap(prev => {
+        const newMap = new Map(prev);
+        newMap.delete("Charlie");
+        return newMap;
+      });
       const newAccessList = await getAccessListNames();
       setAccessList(newAccessList);
       
@@ -284,67 +308,31 @@ const Index = () => {
     });
   };
 
-  const handleReadAsAlice = async () => {
-    if (!alice || !encryptedData) return;
+  const handleReadAsActor = async (actorName: string, privateKey: CryptoKey) => {
+    if (!encryptedData) return;
     
     try {
-      const data = await egendata.readData(DATA_ID, "Alice", alice.privateKey);
-      setAliceDecrypted(data);
+      const data = await egendata.readData(DATA_ID, actorName, privateKey);
+      setDecryptedDataMap(prev => new Map(prev).set(actorName, data));
       
       toast({
-        title: "Data read as Alice!",
-        description: "Alice can always read her own data",
+        title: `Data read as ${actorName}!`,
+        description: `${actorName} successfully decrypted the data`,
       });
     } catch (error) {
+      setDecryptedDataMap(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(actorName);
+        return newMap;
+      });
       toast({
-        title: "Error",
-        description: "Alice could not read the data",
+        title: "Access denied",
+        description: `${actorName} does not have access to the data`,
         variant: "destructive",
       });
     }
   };
 
-  const handleReadAsBob = async () => {
-    if (!bob || !encryptedData) return;
-    
-    try {
-      const data = await egendata.readData(DATA_ID, "Bob", bob.privateKey);
-      setBobDecrypted(data);
-      
-      toast({
-        title: "Data read as Bob!",
-        description: "Bob can read the data",
-      });
-    } catch (error) {
-      setBobDecrypted(null);
-      toast({
-        title: "Access denied",
-        description: "Bob does not have access to the data",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleReadAsCharlie = async () => {
-    if (!charlie || !encryptedData) return;
-    
-    try {
-      const data = await egendata.readData(DATA_ID, "Charlie", charlie.privateKey);
-      setCharlieDecrypted(data);
-      
-      toast({
-        title: "Data read as Charlie!",
-        description: "Charlie can read the data",
-      });
-    } catch (error) {
-      setCharlieDecrypted(null);
-      toast({
-        title: "Access denied",
-        description: "Charlie does not have access to the data",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleScanQR = async (qrData: string) => {
     setShowScanner(false);
@@ -440,6 +428,11 @@ const Index = () => {
     try {
       await egendata.revokeAccess(DATA_ID, recipientName);
       setCustomRecipients(customRecipients.filter(r => r.name !== recipientName));
+      setDecryptedDataMap(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(recipientName);
+        return newMap;
+      });
       const newAccessList = await getAccessListNames();
       setAccessList(newAccessList);
       
@@ -1063,43 +1056,65 @@ const Index = () => {
             </Card>
 
             <Card className="p-6 bg-muted/30">
-              <h3 className="font-semibold text-lg mb-4">Decrypted Data</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-2">Alice</h4>
-                  <DataDisplay 
-                    title="Decrypted Data" 
-                    data={aliceDecrypted ? JSON.stringify(aliceDecrypted, null, 2) : "No data read yet"} 
-                    variant="decrypted" 
-                  />
-                  <Button onClick={handleReadAsAlice} disabled={!alice || !encryptedData} className="mt-2 w-full">
-                    Read as Alice
-                  </Button>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Bob {bobRevoked && "(Revoked)"}</h4>
-                  <DataDisplay 
-                    title="Decrypted Data" 
-                    data={bobDecrypted ? JSON.stringify(bobDecrypted, null, 2) : "No data read yet"} 
-                    variant={bobRevoked ? "encrypted" : "decrypted"} 
-                    isEncrypted={bobRevoked}
-                  />
-                  <Button onClick={handleReadAsBob} disabled={!bob || !encryptedData} className="mt-2 w-full">
-                    Read as Bob
-                  </Button>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Charlie {charlieRevoked && "(Revoked)"}</h4>
-                  <DataDisplay 
-                    title="Decrypted Data" 
-                    data={charlieDecrypted ? JSON.stringify(charlieDecrypted, null, 2) : "No data read yet"} 
-                    variant={charlieRevoked ? "encrypted" : "decrypted"} 
-                    isEncrypted={charlieRevoked}
-                  />
-                  <Button onClick={handleReadAsCharlie} disabled={!charlie || !encryptedData} className="mt-2 w-full">
-                    Read as Charlie
-                  </Button>
-                </div>
+              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" />
+                Data Nodes - Each Actor's View
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Each participant is an independent data node with their own key pair. They can only decrypt data if they're in the keyring.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {getAllActors().map((actor) => {
+                  const hasAccess = accessList.includes(actor.name);
+                  const decryptedData = decryptedDataMap.get(actor.name);
+                  const isRevoked = actor.revoked;
+                  
+                  return (
+                    <Card key={actor.name} className={`p-4 ${hasAccess ? 'border-primary/40 bg-primary/5' : 'border-muted bg-muted/20'}`}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          hasAccess ? 'bg-primary/20' : 'bg-muted'
+                        }`}>
+                          <User className={`w-5 h-5 ${hasAccess ? 'text-primary' : 'text-muted-foreground'}`} />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold">{actor.name}</h4>
+                          <p className="text-xs text-muted-foreground">
+                            {actor.name === "Alice" ? "Data Owner" : "Recipient"}
+                          </p>
+                        </div>
+                        {hasAccess ? (
+                          <div className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
+                            <Key className="w-3 h-3 inline mr-1" />
+                            Access
+                          </div>
+                        ) : (
+                          <div className="text-xs bg-destructive/20 text-destructive px-2 py-1 rounded-full">
+                            <X className="w-3 h-3 inline mr-1" />
+                            No Access
+                          </div>
+                        )}
+                      </div>
+                      
+                      <DataDisplay 
+                        title="Decrypted Data" 
+                        data={decryptedData ? JSON.stringify(decryptedData, null, 2) : "No data read yet"} 
+                        variant={isRevoked || !hasAccess ? "encrypted" : "decrypted"} 
+                        isEncrypted={isRevoked || !hasAccess}
+                      />
+                      
+                      <Button 
+                        onClick={() => handleReadAsActor(actor.name, actor.keyPair!.privateKey)} 
+                        disabled={!actor.keyPair || !encryptedData} 
+                        className="mt-3 w-full"
+                        size="sm"
+                      >
+                        <Lock className="w-3 h-3 mr-2" />
+                        Try to Read as {actor.name}
+                      </Button>
+                    </Card>
+                  );
+                })}
               </div>
             </Card>
 
