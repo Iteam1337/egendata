@@ -27,6 +27,7 @@ interface ExplorePanelProps {
   onAddKey: (name: string) => Promise<void>;
   onGenerateQR: (actorName: string) => string; // Generate QR for an actor
   onScanQR: (qrData: string) => Promise<void>; // Handle QR scan
+  onAddRecipient: (name: string) => Promise<void>; // Add new recipient
 }
 
 export const ExplorePanel = ({
@@ -42,10 +43,12 @@ export const ExplorePanel = ({
   onAddKey,
   onGenerateQR,
   onScanQR,
+  onAddRecipient,
 }: ExplorePanelProps) => {
   const [showQRFor, setShowQRFor] = useState<string | null>(null);
   const [showScannerFor, setShowScannerFor] = useState<string | null>(null);
   const [pasteQRInput, setPasteQRInput] = useState("");
+  const [newRecipientName, setNewRecipientName] = useState("");
 
   if (!isOpen) return null;
 
@@ -218,6 +221,38 @@ export const ExplorePanel = ({
                   </div>
                 );
               })}
+            </div>
+
+            {/* Add new recipient */}
+            <div className="mt-4 pt-4 border-t border-border">
+              <h4 className="text-sm font-medium mb-3">Add New Node</h4>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Name of new node..."
+                  value={newRecipientName}
+                  onChange={(e) => setNewRecipientName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newRecipientName.trim()) {
+                      onAddRecipient(newRecipientName.trim());
+                      setNewRecipientName("");
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background"
+                />
+                <Button 
+                  onClick={() => {
+                    if (newRecipientName.trim()) {
+                      onAddRecipient(newRecipientName.trim());
+                      setNewRecipientName("");
+                    }
+                  }}
+                  size="sm"
+                  disabled={!newRecipientName.trim()}
+                >
+                  Add
+                </Button>
+              </div>
             </div>
           </Card>
 

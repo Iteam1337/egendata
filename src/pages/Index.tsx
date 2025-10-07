@@ -1449,57 +1449,6 @@ const Index = () => {
                         <IPFSLink cid={dataCID} title="Encrypted data in IPFS" />
                       </div>
                     )}
-
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Add more recipients</h4>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            placeholder="Name of new recipient..."
-                            value={newRecipientName}
-                            onChange={(e) => setNewRecipientName(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && handleAddRecipient()}
-                            className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background"
-                          />
-                          <Button onClick={handleAddRecipient} size="sm">
-                            Add
-                          </Button>
-                        </div>
-                      </div>
-
-                      {customRecipients.length > 0 && (
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-medium text-muted-foreground">
-                            Additional recipients ({customRecipients.length})
-                          </h4>
-                          <div className="space-y-2">
-                            {customRecipients.map((recipient) => (
-                              <Card key={recipient.name} className="p-3">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                      <span className="text-xs font-medium text-primary">
-                                        {recipient.name[0].toUpperCase()}
-                                      </span>
-                                    </div>
-                                    <span className="text-sm font-medium">{recipient.name}</span>
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleRevokeCustomRecipient(recipient.name)}
-                                    className="text-xs text-destructive hover:text-destructive"
-                                  >
-                                    Revoke
-                                  </Button>
-                                </div>
-                              </Card>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 )}
               </Card>
@@ -1594,6 +1543,7 @@ const Index = () => {
             });
           }
         }}
+        onAddRecipient={handleAddRecipient}
       />
     </div>
   );
