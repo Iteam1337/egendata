@@ -1637,6 +1637,8 @@ const Index = () => {
           }
         }}
         onAddRecipient={handleAddRecipient}
+        originalData={originalData}
+        onUpdateData={handleUpdateData}
       />
     </div>
   );

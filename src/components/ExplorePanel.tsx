@@ -2,6 +2,7 @@ import { X, Key as KeyIcon, QrCode, ScanLine, Copy, ClipboardPaste } from "lucid
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DataDisplay } from "./DataDisplay";
+import { DataEditor } from "./DataEditor";
 import { KeyRingDisplay } from "./KeyRingDisplay";
 import { IPFSLink } from "./IPFSLink";
 import { QRCodeSVG } from "qrcode.react";
@@ -25,9 +26,15 @@ interface ExplorePanelProps {
   allActors: Array<{ name: string; keyPair: KeyPair | null }>;
   onRemoveKey: (name: string) => Promise<void>;
   onAddKey: (name: string) => Promise<void>;
-  onGenerateQR: (actorName: string) => string; // Generate QR for an actor
-  onScanQR: (qrData: string) => Promise<void>; // Handle QR scan
-  onAddRecipient: (name: string) => Promise<void>; // Add new recipient
+  onGenerateQR: (actorName: string) => string;
+  onScanQR: (qrData: string) => Promise<void>;
+  onAddRecipient: (name: string) => Promise<void>;
+  originalData: {
+    ssn: string;
+    creditCard: string;
+    address: string;
+  };
+  onUpdateData: (newData: { ssn: string; creditCard: string; address: string }) => Promise<void>;
 }
 
 export const ExplorePanel = ({
@@ -44,6 +51,8 @@ export const ExplorePanel = ({
   onGenerateQR,
   onScanQR,
   onAddRecipient,
+  originalData,
+  onUpdateData,
 }: ExplorePanelProps) => {
   const [showQRFor, setShowQRFor] = useState<string | null>(null);
   const [showScannerFor, setShowScannerFor] = useState<string | null>(null);
@@ -340,6 +349,19 @@ export const ExplorePanel = ({
                 .filter((a) => a.keyPair)
                 .map((a) => ({ name: a.name, keyPair: a.keyPair! }))}
               onAddKey={onAddKey}
+            />
+          </Card>
+
+          {/* Data Editor */}
+          <Card className="p-4 bg-muted/30">
+            <h3 className="font-semibold mb-3">Edit Data</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Update the plaintext data. This will re-encrypt the data with a new key and update IPFS.
+            </p>
+            <DataEditor 
+              data={originalData}
+              onSave={onUpdateData}
+              disabled={!allActors.find(a => a.name === "Alice")?.keyPair}
             />
           </Card>
 
