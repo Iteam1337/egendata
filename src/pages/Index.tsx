@@ -58,7 +58,7 @@ const Index = () => {
   const [customRecipients, setCustomRecipients] = useState<Array<{ name: string; keyPair: KeyPair }>>([]);
 
   const DATA_ID = "alice-sensitive-data";
-  const steps = ["Alice has data", "Share with Bob", "Share with Charlie", "Revoke Bob", "Re-grant to Bob"];
+  const steps = ["Alice's Data", "Share with Bob", "Share with Charlie", "Revoke Bob", "Re-grant via QR"];
 
   const getAccessListNames = async () => {
     try {
@@ -547,25 +547,53 @@ const Index = () => {
               <h3 className="font-semibold text-lg mb-4">Step 1: Share with Bob</h3>
               <p className="text-muted-foreground mb-4">
                 Alice has encrypted her data and stored it in IPFS. Now she wants to share access with Bob.
+                The data remains encrypted - only the access control changes.
               </p>
               <Button onClick={handleShareWithBob} disabled={!alice || !bob} className="mb-4">
-                Share Access with Bob
+                Grant Access to Bob <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
 
-              <div className="space-y-4">
+              <div className="space-y-4 mt-6">
                 <ActorCard name="Alice" role="Data Owner" status="active" align="left" />
                 <ActorCard name="Bob" role="Recipient" status="default" align="right" />
               </div>
             </Card>
 
-            <ConceptExplainer 
-              title="How Access Sharing Works" 
-              icon={<Key className="w-4 h-4" />}
-            >
-              <p>
-                When Alice shares access with Bob, she encrypts the data encryption key (DEK) with Bob's public key and adds it to the keyring. Bob can then decrypt the DEK with his private key to access the data.
-              </p>
-            </ConceptExplainer>
+            {/* Concept explainers at bottom for mobile */}
+            <div className="space-y-4 mt-8">
+              <ConceptExplainer 
+                title="The Keystone Pattern" 
+                icon={<Key className="w-4 h-4" />}
+              >
+                <p>
+                  The <strong>keystone pattern</strong> separates data encryption from access control:
+                </p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li><strong>Data Encryption Key (DEK):</strong> A symmetric AES-256-GCM key encrypts the actual data once</li>
+                  <li><strong>Keystone:</strong> Contains the DEK wrapped (encrypted) separately for each recipient using their RSA public key</li>
+                  <li><strong>Benefit:</strong> To grant access, only the keystone needs updating - the encrypted data never changes</li>
+                </ul>
+              </ConceptExplainer>
+
+              <ConceptExplainer 
+                title="Asymmetric vs Symmetric Encryption" 
+                icon={<Lock className="w-4 h-4" />}
+              >
+                <p>
+                  This protocol uses both encryption types strategically:
+                </p>
+                <div className="mt-3 space-y-3">
+                  <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
+                    <p className="font-semibold text-blue-700 dark:text-blue-300 mb-1">Asymmetric (RSA-OAEP-256)</p>
+                    <p className="text-sm">For the keystone - wraps the DEK for each recipient. Slower but enables secure key exchange.</p>
+                  </div>
+                  <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-md">
+                    <p className="font-semibold text-green-700 dark:text-green-300 mb-1">Symmetric (AES-GCM-256)</p>
+                    <p className="text-sm">For the actual data - fast encryption/decryption with authenticated encryption.</p>
+                  </div>
+                </div>
+              </ConceptExplainer>
+            </div>
           </div>
         )}
 
@@ -575,27 +603,89 @@ const Index = () => {
             <Card className="p-6 bg-muted/30">
               <h3 className="font-semibold text-lg mb-4">Step 2: Share with Charlie</h3>
               <p className="text-muted-foreground mb-4">
-                Alice decides to share her data with Charlie as well.
+                Alice can grant access to multiple recipients. Each gets their own wrapped copy of the DEK in the keystone.
+                The encrypted data itself remains unchanged on IPFS.
               </p>
               <Button onClick={handleShareWithCharlie} disabled={!alice || !charlie} className="mb-4">
-                Share Access with Charlie
+                Grant Access to Charlie <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
 
-              <div className="space-y-4">
+              <div className="space-y-4 mt-6">
                 <ActorCard name="Alice" role="Data Owner" status="active" align="left" />
                 <ActorCard name="Bob" role="Recipient" status="success" align="right" />
                 <ActorCard name="Charlie" role="Recipient" status="default" align="left" />
               </div>
             </Card>
 
-            <ConceptExplainer 
-              title="Keyring and Access Control" 
-              icon={<Shield className="w-4 h-4" />}
-            >
-              <p>
-                The keyring holds encrypted DEKs for each recipient. Adding Charlie means encrypting the DEK with Charlie's public key and adding it to the keyring, allowing multiple recipients to access the same encrypted data.
-              </p>
-            </ConceptExplainer>
+            {/* Concept explainers at bottom for mobile */}
+            <div className="space-y-4 mt-8">
+              <ConceptExplainer 
+                title="Granting Access Without Communication" 
+                icon={<Shield className="w-4 h-4" />}
+              >
+                <p>
+                  Notice that Alice doesn't need to communicate with Bob or Charlie to grant them access:
+                </p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li>Alice only needs their <strong>public keys</strong> (shareable without risk)</li>
+                  <li>She wraps the DEK with each recipient's public key</li>
+                  <li>The updated keystone is stored on IPFS with a new CID</li>
+                  <li>Recipients can fetch and decrypt whenever they want - no coordination needed</li>
+                </ul>
+              </ConceptExplainer>
+
+              <ConceptExplainer 
+                title="How the Keyring Works" 
+                icon={<Key className="w-4 h-4" />}
+              >
+                <p>
+                  The keyring is a simple but powerful data structure:
+                </p>
+                <div className="mt-2 p-3 bg-muted rounded-md font-mono text-xs">
+                  {`{
+  "Alice": "encrypted_DEK_for_Alice",
+  "Bob": "encrypted_DEK_for_Bob",
+  "Charlie": "encrypted_DEK_for_Charlie"
+}`}
+                </div>
+                <p className="mt-3 text-sm">
+                  Each recipient can only decrypt their own entry using their private key, which reveals the DEK they need to decrypt the actual data.
+                </p>
+              </ConceptExplainer>
+
+              <ConceptExplainer 
+                title="Multiple Recipients" 
+                icon={<User className="w-4 h-4" />}
+              >
+                <p>
+                  The keystone pattern scales efficiently to many recipients:
+                </p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li><strong>Data stored once:</strong> The encrypted data blob never changes</li>
+                  <li><strong>Keystone grows linearly:</strong> Only adds one entry per recipient</li>
+                  <li><strong>Independent access:</strong> Recipients don't know about each other</li>
+                  <li><strong>Selective revocation:</strong> Remove individual recipients without affecting others</li>
+                </ul>
+              </ConceptExplainer>
+
+              <ConceptExplainer 
+                title="IPFS: Permanent, Addressable Storage" 
+                icon={<Database className="w-4 h-4" />}
+              >
+                <p>
+                  IPFS (InterPlanetary File System) provides the perfect storage layer for this protocol:
+                </p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li><strong>Content addressing:</strong> Each file gets a unique CID based on its cryptographic hash</li>
+                  <li><strong>Immutability:</strong> Content cannot be changed without changing the CID</li>
+                  <li><strong>Decentralization:</strong> No central server controls access or availability</li>
+                  <li><strong>Verification:</strong> CID proves data integrity - tampering is detectable</li>
+                </ul>
+                <p className="mt-3 text-sm italic">
+                  When the keystone updates, a new CID is created. The old version remains accessible but recipients need the new CID for current access.
+                </p>
+              </ConceptExplainer>
+            </div>
           </div>
         )}
 
@@ -603,58 +693,268 @@ const Index = () => {
         {step === 3 && (
           <div className="animate-fade-in space-y-8">
             <Card className="p-6 bg-muted/30">
-              <h3 className="font-semibold text-lg mb-4">Step 3: Revoke Bob</h3>
+              <h3 className="font-semibold text-lg mb-4">Step 3: Revoke Bob's Access</h3>
               <p className="text-muted-foreground mb-4">
-                Alice changes her mind and revokes Bob's access.
+                Alice changes her mind about Bob. She can instantly revoke his access without any communication.
+                Charlie's access remains unaffected.
               </p>
-              <Button onClick={handleRevokeBob} disabled={bobRevoked} className="mb-4">
-                Revoke Bob's Access
+              <Button 
+                onClick={handleRevokeBob} 
+                disabled={bobRevoked}
+                variant="destructive"
+                className="mb-4"
+              >
+                <X className="w-4 h-4 mr-2" /> Revoke Bob's Access
               </Button>
 
-              <div className="space-y-4">
+              <div className="space-y-4 mt-6">
                 <ActorCard name="Alice" role="Data Owner" status="active" align="left" />
-                <ActorCard name="Bob" role="Recipient" status="revoked" align="right" />
-                <ActorCard name="Charlie" role="Recipient" status="success" align="left" />
+                <ActorCard name="Bob" role="Revoked" status="revoked" align="right" />
+                <ActorCard name="Charlie" role="Has Access" status="success" align="left" />
               </div>
             </Card>
 
-            <ConceptExplainer 
-              title="Communication-less Revocation" 
-              icon={<X className="w-4 h-4" />}
-            >
-              <p>
-                Revoking access is done by removing Bob's entry from the keyring and updating the keystone. Bob cannot decrypt new versions of the data, and no communication with Bob is needed.
-              </p>
-            </ConceptExplainer>
+            {/* Concept explainers at bottom for mobile */}
+            <div className="space-y-4 mt-8">
+              <ConceptExplainer 
+                title="Communication-less Revocation" 
+                icon={<LockOpen className="w-4 h-4" />}
+              >
+                <p>
+                  This is one of the most powerful features of the keystone pattern:
+                </p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li><strong>No notification needed:</strong> Bob doesn't need to be informed</li>
+                  <li><strong>No permission required:</strong> Alice doesn't need Bob's cooperation</li>
+                  <li><strong>Instant effect:</strong> Removal from keystone is immediate</li>
+                  <li><strong>Selective:</strong> Other recipients (Charlie) are unaffected</li>
+                </ul>
+                <p className="mt-3 text-sm">
+                  Alice simply removes Bob's entry from the keystone and stores the updated version on IPFS. The new CID points to the version without Bob.
+                </p>
+              </ConceptExplainer>
+
+              <ConceptExplainer 
+                title="Why This Matters: Real-World Scenarios" 
+                icon={<Lightbulb className="w-4 h-4" />}
+              >
+                <p>
+                  Communication-less revocation solves critical real-world problems:
+                </p>
+                <div className="mt-3 space-y-3">
+                  <div className="p-3 bg-primary/10 border border-primary/20 rounded-md">
+                    <p className="font-semibold mb-1">🏥 Healthcare</p>
+                    <p className="text-sm">Revoke a doctor's access to medical records when they leave the clinic - no need to contact them.</p>
+                  </div>
+                  <div className="p-3 bg-primary/10 border border-primary/20 rounded-md">
+                    <p className="font-semibold mb-1">💼 Business</p>
+                    <p className="text-sm">Remove API access for a contractor immediately when contract ends - works even if they're unreachable.</p>
+                  </div>
+                  <div className="p-3 bg-primary/10 border border-primary/20 rounded-md">
+                    <p className="font-semibold mb-1">🔒 Security</p>
+                    <p className="text-sm">In case of key compromise, revoke access instantly without depending on the compromised party.</p>
+                  </div>
+                </div>
+              </ConceptExplainer>
+
+              <ConceptExplainer 
+                title="What Happens Under the Hood" 
+                icon={<Database className="w-4 h-4" />}
+              >
+                <p className="font-semibold mb-2">Revocation Flow:</p>
+                <ol className="list-decimal pl-5 space-y-2 text-sm">
+                  <li>Alice fetches the current keystone from IPFS</li>
+                  <li>She removes Bob's entry from the keyring</li>
+                  <li>The updated keystone is stored on IPFS → <strong>new CID created</strong></li>
+                  <li>Alice shares the new CID with authorized recipients (Charlie)</li>
+                  <li>Bob still has the old CID, but it points to outdated access control</li>
+                </ol>
+                <p className="mt-3 text-sm italic">
+                  Note: Bob can still decrypt data using the old CID/keystone if he cached it. For true forward secrecy, data should be re-encrypted with a new DEK. This demo focuses on the access control mechanism.
+                </p>
+              </ConceptExplainer>
+            </div>
           </div>
         )}
 
-        {/* Step 4: Re-grant to Bob */}
+        {/* Step 4: Re-grant to Bob via QR */}
         {step === 4 && (
           <div className="animate-fade-in space-y-8">
             <Card className="p-6 bg-muted/30">
-              <h3 className="font-semibold text-lg mb-4">Step 4: Re-grant to Bob</h3>
-              <p className="text-muted-foreground mb-4">
-                Alice decides to give Bob another chance by scanning his QR code to restore access.
+              <h3 className="font-semibold text-lg mb-4">Step 4: Re-grant Access via QR Code</h3>
+              <p className="text-muted-foreground mb-6">
+                Alice decides to give Bob another chance. Bob can share his public key via a QR code,
+                and Alice scans it to restore his access. This demonstrates peer-to-peer key exchange.
               </p>
-              <Button onClick={() => { setShowScanner(true); setScanningFor("Bob"); }} className="mb-4">
-                Scan Bob's QR Code
-              </Button>
+              
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium">Step 1: Bob generates QR code</h4>
+                  <Button 
+                    onClick={handleGenerateBobQR}
+                    disabled={!bob}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <QrCode className="w-4 h-4 mr-2" /> Generate Bob's QR Code
+                  </Button>
+                </div>
+                
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium">Step 2: Alice scans it</h4>
+                  <Button 
+                    onClick={() => { setShowScanner(true); setScanningFor("Bob"); }}
+                    className="w-full"
+                  >
+                    <ScanLine className="w-4 h-4 mr-2" /> Scan Bob's QR Code
+                  </Button>
+                </div>
+              </div>
 
-              <div className="space-y-4">
+              <div className="space-y-4 mt-6">
                 <ActorCard name="Alice" role="Data Owner" status="active" align="left" />
-                <ActorCard name="Bob" role="Recipient" status="default" align="right" />
-                <ActorCard name="Charlie" role="Recipient" status="success" align="left" />
+                <ActorCard name="Bob" role="Wants Access" status="default" align="right" />
+                <ActorCard name="Charlie" role="Has Access" status="success" align="left" />
               </div>
             </Card>
 
-            <ConceptExplainer 
-              title="QR Code Key Exchange" 
-              icon={<QrCode className="w-4 h-4" />}
-            >
-              <p>
-                Bob shares his public key via a QR code. Alice scans it to import Bob's key and re-grant access by updating the keyring.
+            {/* Concept explainers at bottom for mobile */}
+            <div className="space-y-4 mt-8">
+              <ConceptExplainer 
+                title="Peer-to-Peer Key Exchange" 
+                icon={<QrCode className="w-4 h-4" />}
+              >
+                <p>
+                  QR codes enable secure, offline key exchange between parties:
+                </p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li><strong>Public keys only:</strong> QR code contains Bob's public key (safe to share)</li>
+                  <li><strong>No central server:</strong> Keys are exchanged directly between devices</li>
+                  <li><strong>Offline capable:</strong> Works without internet connection</li>
+                  <li><strong>Human-verifiable:</strong> Name is included for manual verification</li>
+                </ul>
+              </ConceptExplainer>
+
+              <ConceptExplainer 
+                title="QR Code Format & Security" 
+                icon={<Shield className="w-4 h-4" />}
+              >
+                <p>
+                  The QR code uses Base45 encoding with CBOR compression:
+                </p>
+                <div className="mt-2 space-y-2 text-sm">
+                  <p><strong>Structure:</strong></p>
+                  <div className="p-3 bg-muted rounded-md font-mono text-xs overflow-x-auto">
+                    {`HC1:  // Health Certificate v1 prefix
+{
+  "n": "Bob",          // Name
+  "k": {...},          // JWK public key
+  "t": 1704067200000   // Timestamp
+}`}
+                  </div>
+                  <p className="mt-2">
+                    <strong>Timestamp validation:</strong> QR codes older than 1 hour are rejected to prevent replay attacks.
+                  </p>
+                </div>
+              </ConceptExplainer>
+
+              <ConceptExplainer 
+                title="Interactive Keyring Experimentation" 
+                icon={<Key className="w-4 h-4" />}
+              >
+                <p>
+                  After completing this step, scroll down to the <strong>Current Keyring</strong> section below to experiment:
+                </p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li>Remove Charlie and try reading as Charlie (access denied)</li>
+                  <li>Add Charlie back and verify access is restored</li>
+                  <li>Add custom recipients and test their access</li>
+                  <li>Observe how the keyring updates in real-time</li>
+                </ul>
+                <p className="mt-3 text-sm italic">
+                  This interactive keyring demonstrates how access control is completely in Alice's hands.
+                </p>
+              </ConceptExplainer>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Completed - Free experimentation */}
+        {step === 5 && (
+          <div className="animate-fade-in space-y-8">
+            <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Check className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-lg">Demo Complete!</h3>
+              </div>
+              
+              <p className="text-muted-foreground mb-4">
+                You've seen the full cycle: encryption, access granting, revocation, and re-granting via QR code.
               </p>
+              
+              <div className="bg-background/50 rounded-lg p-4 border border-border">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4 text-primary" />
+                  Now Experiment!
+                </h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">→</span>
+                    <span>Use the <strong>Current Keyring</strong> below to add/remove recipients</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">→</span>
+                    <span>Try reading data as different actors after changing access</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">→</span>
+                    <span>Expand <strong>Advanced Features</strong> to add custom recipients</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">→</span>
+                    <span>Check the IPFS links to see the actual encrypted data</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">→</span>
+                    <span>Read the <a href="/rfc" className="text-primary hover:underline">RFC</a> for technical details</span>
+                  </li>
+                </ul>
+              </div>
+            </Card>
+
+            {/* Summary explainer */}
+            <ConceptExplainer 
+              title="What You've Learned" 
+              icon={<Lightbulb className="w-4 h-4" />}
+              defaultExpanded={true}
+            >
+              <div className="space-y-3">
+                <p className="font-semibold">The egenDATA protocol demonstrates:</p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>
+                    <strong>Self-Sovereign Data:</strong> Alice has complete control over her data. No platform or third party can grant or revoke access without her permission.
+                  </li>
+                  <li>
+                    <strong>Decentralized Storage:</strong> IPFS ensures data is stored without central servers, making it censorship-resistant and permanently addressable.
+                  </li>
+                  <li>
+                    <strong>Keystone Pattern:</strong> Separating data encryption (AES) from access control (RSA keystone) enables efficient multi-recipient access without re-encrypting data.
+                  </li>
+                  <li>
+                    <strong>Communication-less Revocation:</strong> Access can be revoked instantly without contacting or getting permission from recipients.
+                  </li>
+                  <li>
+                    <strong>Peer-to-Peer Key Exchange:</strong> QR codes enable secure, offline key sharing for re-granting access.
+                  </li>
+                </ul>
+                <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                  <p className="text-sm">
+                    <strong>Storage Agnostic:</strong> While this demo uses IPFS, the protocol can work with any immutable, decentralized storage system (e.g., Arweave, Filecoin, or even BitTorrent). The only requirements are <strong>immutability</strong> and <strong>content addressing</strong>.
+                  </p>
+                </div>
+              </div>
             </ConceptExplainer>
           </div>
         )}
