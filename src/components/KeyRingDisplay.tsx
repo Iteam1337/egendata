@@ -49,12 +49,12 @@ export const KeyRingDisplay = ({
               Keyring is empty
             </div>
           ) : (
-            recipients.map((name) => {
+            recipients.map((name, index) => {
               const keyPair = getKeyPair?.(name);
               const base45Key = keyPair ? encodeKeyForQR(name, keyPair.publicKeyJWK) : null;
               
               return (
-                <Tooltip key={name}>
+                <Tooltip key={`${name}-${index}`}>
                   <TooltipTrigger asChild>
                     <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-primary/10 text-primary border border-primary/20 ${interactive ? 'pr-1' : ''}`}>
                       <Key className="w-3 h-3" />
