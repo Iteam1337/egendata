@@ -312,20 +312,27 @@ const encryptedData = await new CompactEncrypt(
               <li>Store the updated keystone (creates new CID)</li>
             </ol>
 
-            <h3 className="text-2xl font-semibold mb-3">5.4 Access Revocation</h3>
+            <h3 className="text-2xl font-semibold mb-3">5.4 Access Revocation with Key Rotation</h3>
             <p className="text-muted-foreground mb-4">
-              To revoke access from a recipient:
+              To securely revoke access from a recipient, the protocol implements automatic key rotation:
             </p>
             <ol className="list-decimal pl-6 text-muted-foreground space-y-2 mb-6">
               <li>Retrieve the current keystone from storage</li>
-              <li>Remove the recipient's entry from the keyring</li>
-              <li>Store the updated keystone (creates new CID)</li>
+              <li>Decrypt the data using the owner's private key and the old DEK</li>
+              <li>Generate a completely new symmetric DEK</li>
+              <li>Re-encrypt the data payload with the new DEK</li>
+              <li>Encrypt the new DEK for all remaining recipients (excluding the revoked party)</li>
+              <li>Store the new keystone with re-encrypted data (creates new CID in IPFS)</li>
               <li>No communication with the revoked recipient is required</li>
             </ol>
-            <Card className="p-4 mb-6 bg-amber-50 border-amber-200">
-              <p className="text-sm text-amber-900">
-                <strong>Note:</strong> Revoked recipients can still decrypt historical versions of the keystone 
-                if they cached the data. The protocol does not provide forward secrecy for past data.
+            <Card className="p-4 mb-6 bg-emerald-50 border-emerald-200">
+              <p className="text-sm text-emerald-900 mb-2">
+                <strong>Enhanced Security:</strong> Key rotation ensures that revoked recipients cannot decrypt 
+                the data even if they cached the old encrypted payload. The old DEK becomes useless after revocation.
+              </p>
+              <p className="text-sm text-emerald-900">
+                The new IPFS CID serves as a pointer to the re-encrypted version, while the old version remains 
+                immutable in storage but is no longer referenced.
               </p>
             </Card>
 
@@ -353,15 +360,28 @@ const encryptedData = await new CompactEncrypt(
               <li>Lost private keys cannot be recovered</li>
             </ul>
 
-            <h3 className="text-2xl font-semibold mb-3">6.2 Forward Secrecy</h3>
+            <h3 className="text-2xl font-semibold mb-3">6.2 Forward Secrecy via Key Rotation</h3>
             <p className="text-muted-foreground mb-4">
-              The protocol does NOT provide forward secrecy. Revoked recipients who cached the encrypted data 
-              and keystone can continue to decrypt it. To achieve forward secrecy:
+              The protocol implements automatic key rotation during revocation to provide forward secrecy. 
+              When access is revoked:
             </p>
-            <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-6">
-              <li>Re-encrypt data with a new DEK after revocation</li>
-              <li>Use time-limited access tokens in addition to cryptographic access control</li>
+            <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
+              <li>A new symmetric DEK is generated</li>
+              <li>The data is re-encrypted with the new DEK</li>
+              <li>The new DEK is wrapped only for remaining recipients</li>
+              <li>A new IPFS CID is created, pointing to the re-encrypted data</li>
             </ul>
+            <p className="text-muted-foreground mb-4">
+              This ensures that revoked recipients cannot decrypt future versions of the data, even if they 
+              cached the old encrypted payload. The old IPFS CID remains valid but points to obsolete data.
+            </p>
+            <Card className="p-4 mb-6 bg-blue-50 border-blue-200">
+              <p className="text-sm text-blue-900">
+                <strong>IPFS and Immutability:</strong> The old encrypted data remains accessible via its 
+                original CID, but without the new DEK, it cannot be decrypted by revoked parties. The new 
+                keystone with re-encrypted data gets a new CID, which is what authorized users reference going forward.
+              </p>
+            </Card>
 
             <h3 className="text-2xl font-semibold mb-3">6.3 Metadata Leakage</h3>
             <p className="text-muted-foreground mb-4">

@@ -102,17 +102,19 @@ export async function decryptData(
     privateKey
   );
   
-  // Import the DEK
+  // Import the DEK (create new Uint8Array to ensure correct type)
   const dek = await crypto.subtle.importKey(
     'raw',
-    dekRaw,
+    new Uint8Array(dekRaw),
     { name: 'AES-GCM', length: 256 },
     false,
     ['decrypt']
   );
   
   // Decode the base64 encrypted data
-  const combined = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
+  const combined = new Uint8Array(
+    Array.from(atob(encryptedData), c => c.charCodeAt(0))
+  );
   
   // Extract IV (first 12 bytes) and encrypted data
   const iv = combined.slice(0, 12);
