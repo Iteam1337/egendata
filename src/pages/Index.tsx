@@ -1431,6 +1431,39 @@ const Index = () => {
                     )}
                   </div>
                 </ActorCard>
+
+                {/* Custom Recipients */}
+                {customRecipients.map((recipient) => {
+                  const isRevoked = !accessList.includes(recipient.name);
+                  return (
+                    <ActorCard 
+                      key={recipient.name}
+                      name={recipient.name} 
+                      role="Custom Recipient" 
+                      status={isRevoked ? "revoked" : "success"} 
+                      align="right"
+                    >
+                      <div className="space-y-3 mt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReadAsActor(recipient.name, recipient.keyPair.privateKey)}
+                          className="w-full"
+                        >
+                          <Lock className="w-4 h-4 mr-2" /> Read Data as {recipient.name}
+                        </Button>
+                        {decryptedDataMap.has(recipient.name) && (
+                          <div className="p-3 bg-success/10 border border-success/20 rounded-md">
+                            <p className="text-xs font-semibold text-success mb-2">✓ Decrypted Data:</p>
+                            <pre className="text-xs font-mono overflow-x-auto">
+                              {JSON.stringify(decryptedDataMap.get(recipient.name), null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    </ActorCard>
+                  );
+                })}
               </div>
 
 
