@@ -9,6 +9,7 @@ import type { KeyPair } from "@/lib/egendata";
 interface ExplorePanelProps {
   isOpen: boolean;
   onClose: () => void;
+  encryptedData?: string;
   selectedActor: {
     name: string;
     keyPair: KeyPair | null;
@@ -26,6 +27,7 @@ interface ExplorePanelProps {
 export const ExplorePanel = ({
   isOpen,
   onClose,
+  encryptedData,
   selectedActor,
   onReadAsActor,
   dataCID,
@@ -53,16 +55,78 @@ export const ExplorePanel = ({
         </div>
 
         <div className="p-6 space-y-6">
+          {/* Encrypted Data Display */}
+          {encryptedData && (
+            <Card className="p-4 bg-muted/30">
+              <h3 className="font-semibold mb-3">Encrypted Data (Stored on IPFS)</h3>
+              <DataDisplay title="" data={encryptedData} isEncrypted variant="encrypted" />
+            </Card>
+          )}
+
+          {/* All Actors List */}
+          <Card className="p-4 bg-muted/30">
+            <h3 className="font-semibold mb-3">All Data Nodes</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Click on any actor to view their detailed information
+            </p>
+            <div className="space-y-2">
+              {allActors.map((actor) => {
+                const hasAccess = accessList.includes(actor.name);
+                const isSelected = selectedActor?.name === actor.name;
+
+                return (
+                  <div
+                    key={actor.name}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                      isSelected
+                        ? "border-primary bg-primary/10"
+                        : hasAccess
+                        ? "border-primary/40 bg-primary/5 hover:bg-primary/10"
+                        : "border-muted bg-muted/20 hover:bg-muted/30"
+                    }`}
+                    onClick={() => {
+                      // Update selected actor - this needs to be handled by parent
+                      // For now, just show basic info
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          hasAccess ? "bg-primary/20" : "bg-muted"
+                        }`}
+                      >
+                        <span className="font-semibold text-sm">
+                          {actor.name[0].toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-sm">{actor.name}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          {actor.name === "Alice" ? "Data Owner" : "Recipient"}
+                        </p>
+                      </div>
+                      {hasAccess ? (
+                        <div className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
+                          Access
+                        </div>
+                      ) : (
+                        <div className="text-xs bg-destructive/20 text-destructive px-2 py-1 rounded-full">
+                          No Access
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
           {selectedActor && (
             <>
               {/* Actor Information */}
               <Card className="p-4 bg-muted/30">
-                <h3 className="font-semibold mb-3">Actor Information</h3>
+                <h3 className="font-semibold mb-3">Selected: {selectedActor.name}</h3>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Name:</span>
-                    <span className="font-medium">{selectedActor.name}</span>
-                  </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Role:</span>
                     <span className="font-medium">
