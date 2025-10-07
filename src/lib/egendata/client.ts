@@ -390,6 +390,93 @@ export class EgendataClient {
   }
 
   /**
+   * Update the plaintext data (re-encrypts with same recipients)
+   */
+  async updateData(dataId: string, newData: object, ownerName: string): Promise<{ encryptedData: string; cid?: string }> {
+    const storedData = await this.storage.get(dataId);
+    if (!storedData) {
+      throw new Error(`Data not found: ${dataId}`);
+    }
+
+    // Get owner's keypair
+    const ownerKeyPair = this.keyPairs.get(ownerName);
+    if (!ownerKeyPair) {
+      throw new Error('Owner key pair not found');
+    }
+
+    // Generate a new DEK
+    const newDEK = await crypto.subtle.generateKey(
+      { name: 'AES-GCM', length: 256 },
+      true,
+      ['encrypt', 'decrypt']
+    );
+
+    // Generate a new IV
+    const newIV = crypto.getRandomValues(new Uint8Array(12));
+
+    // Encrypt the new data with the new DEK
+    const encodedData = new TextEncoder().encode(JSON.stringify(newData));
+    const newEncryptedDataBuffer = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: newIV },
+      newDEK,
+      encodedData
+    );
+
+    // Combine new IV and encrypted data
+    const combined = new Uint8Array(newIV.length + newEncryptedDataBuffer.byteLength);
+    combined.set(newIV, 0);
+    combined.set(new Uint8Array(newEncryptedDataBuffer), newIV.length);
+    const newEncryptedData = btoa(String.fromCharCode(...combined));
+
+    // Export new DEK to raw format
+    const newDEKRaw = await crypto.subtle.exportKey('raw', newDEK);
+
+    // Re-encrypt DEK for all current recipients
+    const newRecipientKeys = await Promise.all(
+      storedData.keystone.recipients.map(async (recipient) => {
+        const recipientKeyPair = this.keyPairs.get(recipient.name);
+        if (!recipientKeyPair) {
+          throw new Error(`Key pair not found for recipient: ${recipient.name}`);
+        }
+
+        const encryptedDEK = await new jose.CompactEncrypt(
+          new Uint8Array(newDEKRaw)
+        )
+          .setProtectedHeader({ alg: 'RSA-OAEP-256', enc: 'A256GCM' })
+          .encrypt(recipientKeyPair.publicKey);
+
+        return {
+          name: recipient.name,
+          encryptedDEK
+        };
+      })
+    );
+
+    // Create updated stored data
+    const updatedStoredData: StoredData = {
+      encryptedData: newEncryptedData,
+      keystone: {
+        encryptedKey: 'keystone-v1',
+        recipients: newRecipientKeys
+      },
+      metadata: {
+        ...storedData.metadata,
+        updatedAt: Date.now()
+      }
+    };
+
+    await this.storage.set(dataId, updatedStoredData);
+
+    // Get CID if using IPFS storage
+    let cid: string | undefined;
+    if (this.storage instanceof IPFSStorage) {
+      cid = this.storage.getCID(dataId) || undefined;
+    }
+
+    return { encryptedData: newEncryptedData, cid };
+  }
+
+  /**
    * Delete data from storage
    */
   async deleteData(dataId: string): Promise<void> {

@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { ActorCard } from "@/components/ActorCard";
 import { DataDisplay } from "@/components/DataDisplay";
+import { DataEditor } from "@/components/DataEditor";
 import { StepIndicator } from "@/components/StepIndicator";
 import { QRKeyDisplay } from "@/components/QRKeyDisplay";
 import { QRKeyScanner } from "@/components/QRKeyScanner";
@@ -56,7 +57,7 @@ const Index = () => {
   const [bob, setBob] = useState<KeyPair | null>(null);
   const [charlie, setCharlie] = useState<KeyPair | null>(null);
 
-  const [originalData] = useState({
+  const [originalData, setOriginalData] = useState({
     ssn: "19800101-1234",
     creditCard: "4111-1111-1111-1111",
     address: "Example Street 123, Stockholm",
@@ -256,6 +257,17 @@ const Index = () => {
         newMap.delete("Bob");
         return newMap;
       });
+      
+      // Uppdatera krypterad data och CID efter key rotation
+      const newEncryptedData = await egendata.getRawEncryptedData(DATA_ID);
+      if (newEncryptedData) {
+        setEncryptedData(newEncryptedData);
+      }
+      const newCID = ipfsStorage.getCID(DATA_ID);
+      if (newCID) {
+        setDataCID(newCID);
+      }
+      
       const newAccessList = await getAccessListNames();
       setAccessList(newAccessList);
       setStep(4);
@@ -265,7 +277,7 @@ const Index = () => {
 
       toast({
         title: "Access revoked!",
-        description: "Alice removed Bob's access. Open Explore Data to restore it.",
+        description: "Alice removed Bob's access. Data has been re-encrypted with a new key.",
       });
     } catch (error) {
       toast({
@@ -285,12 +297,23 @@ const Index = () => {
         newMap.delete("Charlie");
         return newMap;
       });
+      
+      // Uppdatera krypterad data och CID efter key rotation
+      const newEncryptedData = await egendata.getRawEncryptedData(DATA_ID);
+      if (newEncryptedData) {
+        setEncryptedData(newEncryptedData);
+      }
+      const newCID = ipfsStorage.getCID(DATA_ID);
+      if (newCID) {
+        setDataCID(newCID);
+      }
+      
       const newAccessList = await getAccessListNames();
       setAccessList(newAccessList);
 
       toast({
         title: "Access revoked!",
-        description: "Charlie can no longer decrypt the data",
+        description: "Charlie's access removed. Data re-encrypted with new key.",
       });
     } catch (error) {
       toast({
@@ -446,17 +469,64 @@ const Index = () => {
         newMap.delete(recipientName);
         return newMap;
       });
+      
+      // Uppdatera krypterad data och CID efter key rotation
+      const newEncryptedData = await egendata.getRawEncryptedData(DATA_ID);
+      if (newEncryptedData) {
+        setEncryptedData(newEncryptedData);
+      }
+      const newCID = ipfsStorage.getCID(DATA_ID);
+      if (newCID) {
+        setDataCID(newCID);
+      }
+      
       const newAccessList = await getAccessListNames();
       setAccessList(newAccessList);
 
       toast({
         title: "Access revoked",
-        description: `${recipientName} no longer has access`,
+        description: `${recipientName} no longer has access. Data re-encrypted.`,
       });
     } catch (error) {
       toast({
         title: "Error",
         description: "Could not revoke access",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateData = async (newData: object) => {
+    if (!alice) {
+      toast({
+        title: "Error",
+        description: "Alice's keys are required to update data",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const result = await egendata.updateData(DATA_ID, newData, "Alice");
+      setOriginalData(newData as typeof originalData);
+      setEncryptedData(result.encryptedData);
+      
+      const newCID = ipfsStorage.getCID(DATA_ID);
+      if (newCID) {
+        setDataCID(newCID);
+      }
+
+      // Clear all decrypted data to force re-read
+      setDecryptedDataMap(new Map());
+
+      toast({
+        title: "Data updated!",
+        description: "Data has been re-encrypted with the new content",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not update data",
         variant: "destructive",
       });
     }
@@ -620,6 +690,12 @@ const Index = () => {
                 <Button onClick={handleShareWithBob} disabled={!alice || !bob} className="mb-4">
                   Grant Access to Bob <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
+
+                <DataEditor 
+                  data={originalData} 
+                  onSave={handleUpdateData}
+                  disabled={!alice}
+                />
 
                 <div className="space-y-4 mt-6">
                   <ActorCard name="Alice" role="Data Owner" status="active" align="left">
