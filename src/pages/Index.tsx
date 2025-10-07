@@ -1187,6 +1187,103 @@ const Index = () => {
                 </div>
               </Card>
 
+              {/* Actor cards for continued experimentation */}
+              <div className="space-y-4">
+                <ActorCard name="Alice" role="Data Owner" status="active" align="left">
+                  <div className="space-y-3 mt-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Keyring:</span>
+                      <span className="font-mono text-xs">{accessList.join(", ")}</span>
+                    </div>
+                    {alice && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleReadAsActor("Alice", alice.privateKey)}
+                        className="w-full"
+                      >
+                        <Lock className="w-4 h-4 mr-2" /> Read Data as Alice
+                      </Button>
+                    )}
+                    {decryptedDataMap.has("Alice") && (
+                      <div className="p-3 bg-success/10 border border-success/20 rounded-md">
+                        <p className="text-xs font-semibold text-success mb-2">✓ Decrypted Data:</p>
+                        <pre className="text-xs font-mono overflow-x-auto">
+                          {JSON.stringify(decryptedDataMap.get("Alice"), null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                </ActorCard>
+
+                <ActorCard name="Bob" role="Recipient" status={bobRevoked ? "revoked" : "success"} align="right">
+                  <div className="space-y-3 mt-4">
+                    {bob && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleReadAsActor("Bob", bob.privateKey)}
+                        className="w-full"
+                      >
+                        <Lock className="w-4 h-4 mr-2" /> Read Data as Bob
+                      </Button>
+                    )}
+                    {decryptedDataMap.has("Bob") && (
+                      <div className="p-3 bg-success/10 border border-success/20 rounded-md">
+                        <p className="text-xs font-semibold text-success mb-2">✓ Decrypted Data:</p>
+                        <pre className="text-xs font-mono overflow-x-auto">
+                          {JSON.stringify(decryptedDataMap.get("Bob"), null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                    {bob && !bobRevoked && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleRevokeBob}
+                        className="w-full"
+                      >
+                        <X className="w-4 h-4 mr-2" /> Revoke Access
+                      </Button>
+                    )}
+                  </div>
+                </ActorCard>
+
+                <ActorCard name="Charlie" role="Recipient" status={charlieRevoked ? "revoked" : "success"} align="left">
+                  <div className="space-y-3 mt-4">
+                    {charlie && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleReadAsActor("Charlie", charlie.privateKey)}
+                        className="w-full"
+                      >
+                        <Lock className="w-4 h-4 mr-2" /> Read Data as Charlie
+                      </Button>
+                    )}
+                    {decryptedDataMap.has("Charlie") && (
+                      <div className="p-3 bg-success/10 border border-success/20 rounded-md">
+                        <p className="text-xs font-semibold text-success mb-2">✓ Decrypted Data:</p>
+                        <pre className="text-xs font-mono overflow-x-auto">
+                          {JSON.stringify(decryptedDataMap.get("Charlie"), null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                    {charlie && !charlieRevoked && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleRevokeCharlie}
+                        className="w-full"
+                      >
+                        <X className="w-4 h-4 mr-2" /> Revoke Access
+                      </Button>
+                    )}
+                  </div>
+                </ActorCard>
+              </div>
+
+
               {/* Summary explainer */}
               <ConceptExplainer
                 title="What You've Learned"
