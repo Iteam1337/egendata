@@ -1075,24 +1075,120 @@ const Index = () => {
           </div>
         )}
 
-        {/* Step 5: Bob får åtkomst igen */}
+        {/* Step 5: Bob får åtkomst igen - Interaktiv nyckelring */}
         {step === 5 && (
           <div className="animate-fade-in space-y-8">
             <div className="space-y-4">
-              <h2 className="text-4xl font-bold">Bob har fått åtkomst igen! 🎉</h2>
+              <h2 className="text-4xl font-bold">Laborera med nyckelringen! 🔬</h2>
               <p className="text-lg text-muted-foreground">
-                Alice har scannat Bobs QR-kod och återgett honom åtkomst. Nu kan Bob läsa datan igen.
+                Nu kan du experimentera med nyckelringen - lägg till och ta bort nycklar för att se hur åtkomsten fungerar.
               </p>
             </div>
+
+            {/* Interaktiv nyckelring kontroll */}
+            <Card className="p-6 bg-primary/5 border-primary">
+              <h3 className="text-lg font-semibold mb-4">Nyckelring - Experimentpanel</h3>
+              <KeyRingDisplay 
+                recipients={accessList} 
+                getKeyPair={(name) => {
+                  if (name === "Alice") return alice || undefined;
+                  if (name === "Bob") return bob || undefined;
+                  if (name === "Charlie") return charlie || undefined;
+                  return customRecipients.find(r => r.name === name)?.keyPair;
+                }}
+                interactive={true}
+                onRemoveKey={async (name) => {
+                  try {
+                    await egendata.revokeAccess(DATA_ID, name);
+                    const newAccessList = await getAccessListNames();
+                    setAccessList(newAccessList);
+                    
+                    if (name === "Bob") {
+                      setBobRevoked(true);
+                      setBobDecrypted(null);
+                    } else if (name === "Charlie") {
+                      setCharlieRevoked(true);
+                      setCharlieDecrypted(null);
+                    }
+                    
+                    toast({
+                      title: `${name} borttagen från nyckelringen`,
+                      description: `${name} kan inte längre dekryptera datan`,
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Fel",
+                      description: "Kunde inte ta bort nyckeln",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                availableKeys={[
+                  ...(bob ? [{ name: "Bob", keyPair: bob }] : []),
+                  ...(charlie ? [{ name: "Charlie", keyPair: charlie }] : []),
+                  ...customRecipients
+                ]}
+                onAddKey={async (name) => {
+                  if (!alice) return;
+                  
+                  try {
+                    let publicKey: CryptoKey;
+                    
+                    if (name === "Bob" && bob) {
+                      publicKey = bob.publicKey;
+                    } else if (name === "Charlie" && charlie) {
+                      publicKey = charlie.publicKey;
+                    } else {
+                      const customRecipient = customRecipients.find(r => r.name === name);
+                      if (!customRecipient) return;
+                      publicKey = customRecipient.keyPair.publicKey;
+                    }
+                    
+                    await egendata.reGrantAccess(
+                      DATA_ID,
+                      name,
+                      publicKey,
+                      alice.privateKey
+                    );
+                    
+                    const newAccessList = await getAccessListNames();
+                    setAccessList(newAccessList);
+                    
+                    if (name === "Bob") {
+                      setBobRevoked(false);
+                    } else if (name === "Charlie") {
+                      setCharlieRevoked(false);
+                    }
+                    
+                    toast({
+                      title: `${name} tillagd i nyckelringen`,
+                      description: `${name} kan nu dekryptera datan`,
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Fel",
+                      description: "Kunde inte lägga till nyckeln",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground mt-4">
+                💡 Tips: Ta bort och lägg till nycklar för att se hur Bob och Charlie påverkas. 
+                Alice nyckel kan inte tas bort eftersom hon är ägaren.
+              </p>
+            </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <ActorCard name="Alice" role="Data Owner" status="active">
                 <Button onClick={handleReadAsAlice} variant="default" size="sm" className="w-full">
-                  📖 Läs
+                  📖 Läs som Alice
                 </Button>
               </ActorCard>
 
-              <ActorCard name="Bob" role="Mottagare" status={bobDecrypted ? "success" : "default"}>
+              <ActorCard name="Bob" role="Mottagare" status={
+                bobDecrypted ? "success" : (accessList.includes("Bob") ? "default" : "revoked")
+              }>
                 <div className="space-y-4">
                   <div className="space-y-3 pb-3 border-b border-border">
                     <div className="flex items-center gap-2 text-sm">
@@ -1103,35 +1199,48 @@ const Index = () => {
                       <Lock className="w-4 h-4 text-warning" />
                       <span className="text-muted-foreground">Ser krypterad data från IPFS</span>
                     </div>
-                    <KeyRingDisplay 
-                      recipients={accessList} 
-                      getKeyPair={(name) => {
-                        if (name === "Alice") return alice || undefined;
-                        if (name === "Bob") return bob || undefined;
-                        if (name === "Charlie") return charlie || undefined;
-                        return customRecipients.find(r => r.name === name)?.keyPair;
-                      }}
-                    />
                     <div className="flex items-center gap-2 text-sm">
-                      <LockOpen className="w-4 h-4 text-success" />
-                      <span className="text-success font-medium">Kan dekryptera (Bobs nyckel finns i nyckelring)</span>
+                      {accessList.includes("Bob") ? (
+                        <>
+                          <LockOpen className="w-4 h-4 text-success" />
+                          <span className="text-success font-medium">Kan dekryptera (finns i nyckelring)</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4 text-destructive" />
+                          <span className="text-destructive font-medium">Kan EJ dekryptera (saknas i nyckelring)</span>
+                        </>
+                      )}
                     </div>
                   </div>
                   
-                  <Button onClick={handleReadAsBob} variant="default" size="sm" className="w-full">
+                  <Button 
+                    onClick={handleReadAsBob} 
+                    variant="default" 
+                    size="sm" 
+                    className="w-full"
+                    disabled={!accessList.includes("Bob")}
+                  >
                     📖 Läs som Bob
                   </Button>
                   {bobDecrypted && (
                     <DataDisplay
-                      title="Bob kan läsa igen!"
+                      title="Bob läser data"
                       data={JSON.stringify(bobDecrypted, null, 2)}
                       variant="decrypted"
                     />
                   )}
+                  {!accessList.includes("Bob") && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/30 rounded text-xs text-destructive">
+                      ⚠️ Bobs nyckel finns inte i nyckelringen
+                    </div>
+                  )}
                 </div>
               </ActorCard>
         
-              <ActorCard name="Charlie" role="Mottagare" status={charlieDecrypted ? "success" : "default"}>
+              <ActorCard name="Charlie" role="Mottagare" status={
+                charlieDecrypted ? "success" : (accessList.includes("Charlie") ? "default" : "revoked")
+              }>
                 <div className="space-y-4">
                   <div className="space-y-3 pb-3 border-b border-border">
                     <div className="flex items-center gap-2 text-sm">
@@ -1142,24 +1251,42 @@ const Index = () => {
                       <Lock className="w-4 h-4 text-warning" />
                       <span className="text-muted-foreground">Ser krypterad data från IPFS</span>
                     </div>
-                    <KeyRingDisplay 
-                      recipients={accessList} 
-                      getKeyPair={(name) => {
-                        if (name === "Alice") return alice || undefined;
-                        if (name === "Bob") return bob || undefined;
-                        if (name === "Charlie") return charlie || undefined;
-                        return customRecipients.find(r => r.name === name)?.keyPair;
-                      }}
-                    />
                     <div className="flex items-center gap-2 text-sm">
-                      <LockOpen className="w-4 h-4 text-success" />
-                      <span className="text-success font-medium">Kan dekryptera (Charlies nyckel finns i nyckelring)</span>
+                      {accessList.includes("Charlie") ? (
+                        <>
+                          <LockOpen className="w-4 h-4 text-success" />
+                          <span className="text-success font-medium">Kan dekryptera (finns i nyckelring)</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4 text-destructive" />
+                          <span className="text-destructive font-medium">Kan EJ dekryptera (saknas i nyckelring)</span>
+                        </>
+                      )}
                     </div>
                   </div>
                   
-                  <Button onClick={handleReadAsCharlie} variant="default" size="sm" className="w-full">
+                  <Button 
+                    onClick={handleReadAsCharlie} 
+                    variant="default" 
+                    size="sm" 
+                    className="w-full"
+                    disabled={!accessList.includes("Charlie")}
+                  >
                     📖 Läs som Charlie
                   </Button>
+                  {charlieDecrypted && (
+                    <DataDisplay
+                      title="Charlie läser data"
+                      data={JSON.stringify(charlieDecrypted, null, 2)}
+                      variant="decrypted"
+                    />
+                  )}
+                  {!accessList.includes("Charlie") && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/30 rounded text-xs text-destructive">
+                      ⚠️ Charlies nyckel finns inte i nyckelringen
+                    </div>
+                  )}
                 </div>
               </ActorCard>
             </div>
