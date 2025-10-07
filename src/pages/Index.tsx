@@ -882,27 +882,60 @@ const Index = () => {
               <Card className="p-6 bg-muted/30">
                 <h3 className="font-semibold text-lg mb-4">Step 4: Re-grant Access via QR Code</h3>
                 <p className="text-muted-foreground mb-6">
-                  Alice decides to give Bob another chance. Bob shares his public key via a QR code shown below, and Alice scans
+                  Alice decides to give Bob another chance. Bob shares his public key via QR code, and Alice scans
                   it to restore his access. This demonstrates peer-to-peer key exchange.
                 </p>
 
                 <div className="mb-6">
-                  <h4 className="text-sm font-medium mb-3">Alice scans Bob's QR code to restore access:</h4>
+                  <h4 className="text-sm font-medium mb-3">Alice scans Bob's QR code (simulated):</h4>
                   <Button
-                    onClick={() => {
-                      setShowScanner(true);
-                      setScanningFor("Bob");
+                    onClick={async () => {
+                      if (!bob || !alice || !bobQRData) return;
+                      
+                      try {
+                        const keyData = decodeKeyFromQR(bobQRData);
+                        if (!validateKeyData(keyData)) {
+                          toast({
+                            title: "Invalid QR code",
+                            description: "QR code is too old or invalid",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+
+                        const { name, publicKeyJWK } = qrKeyDataToJWK(keyData);
+                        const recipientPublicKey = await egendata.importPublicKey(publicKeyJWK);
+                        await egendata.reGrantAccess(DATA_ID, name, recipientPublicKey, alice.privateKey);
+
+                        const newAccessList = await getAccessListNames();
+                        setAccessList(newAccessList);
+                        setBobRevoked(false);
+                        setStep(5);
+
+                        toast({
+                          title: "Access restored!",
+                          description: `${name} now has access again via QR code scan`,
+                        });
+                      } catch (error) {
+                        console.error("QR scan error:", error);
+                        toast({
+                          title: "Scan error",
+                          description: "Could not process QR code",
+                          variant: "destructive",
+                        });
+                      }
                     }}
                     className="w-full"
                     size="lg"
+                    disabled={bobRevoked === false}
                   >
-                    <ScanLine className="w-4 h-4 mr-2" /> Scan Bob's QR Code
+                    <ScanLine className="w-4 h-4 mr-2" /> Alice Scans Bob's QR Code
                   </Button>
                 </div>
 
                 <div className="space-y-4 mt-6">
                   <ActorCard name="Alice" role="Data Owner" status="active" align="left" />
-                  <ActorCard name="Bob" role="Wants Access" status="default" align="right" qrCode={bobQRData} />
+                  <ActorCard name="Bob" role="Wants Access" status="default" align="right" />
                   <ActorCard name="Charlie" role="Has Access" status="success" align="left" />
                 </div>
               </Card>
@@ -1198,6 +1231,19 @@ const Index = () => {
         }}
         encryptedData={encryptedData}
         onReadAsActor={handleReadAsActor}
+        onGenerateQR={(actorName: string) => {
+          let keyPair: KeyPair | undefined;
+          if (actorName === "Alice") keyPair = alice ?? undefined;
+          else if (actorName === "Bob") keyPair = bob ?? undefined;
+          else if (actorName === "Charlie") keyPair = charlie ?? undefined;
+          else keyPair = customRecipients.find((r) => r.name === actorName)?.keyPair;
+          
+          if (keyPair) {
+            return encodeKeyForQR(actorName, keyPair.publicKeyJWK);
+          }
+          return "";
+        }}
+        onScanQR={handleScanQR}
         selectedActor={
           selectedActorForExplore
             ? {

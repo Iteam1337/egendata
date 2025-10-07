@@ -1,10 +1,12 @@
-import { X } from "lucide-react";
+import { X, Key as KeyIcon, QrCode, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DataDisplay } from "./DataDisplay";
 import { KeyRingDisplay } from "./KeyRingDisplay";
 import { IPFSLink } from "./IPFSLink";
+import { QRCodeSVG } from "qrcode.react";
 import type { KeyPair } from "@/lib/egendata";
+import { useState } from "react";
 
 interface ExplorePanelProps {
   isOpen: boolean;
@@ -22,6 +24,8 @@ interface ExplorePanelProps {
   allActors: Array<{ name: string; keyPair: KeyPair | null }>;
   onRemoveKey: (name: string) => Promise<void>;
   onAddKey: (name: string) => Promise<void>;
+  onGenerateQR: (actorName: string) => string; // Generate QR for an actor
+  onScanQR: (qrData: string) => Promise<void>; // Handle QR scan
 }
 
 export const ExplorePanel = ({
@@ -35,7 +39,13 @@ export const ExplorePanel = ({
   allActors,
   onRemoveKey,
   onAddKey,
+  onGenerateQR,
+  onScanQR,
 }: ExplorePanelProps) => {
+  const [showQRFor, setShowQRFor] = useState<string | null>(null);
+  const [showScannerFor, setShowScannerFor] = useState<string | null>(null);
+  const [pasteQRInput, setPasteQRInput] = useState("");
+
   if (!isOpen) return null;
 
   return (
@@ -73,45 +83,110 @@ export const ExplorePanel = ({
               {allActors.map((actor) => {
                 const hasAccess = accessList.includes(actor.name);
                 const isSelected = selectedActor?.name === actor.name;
+                const showingQR = showQRFor === actor.name;
+                const showingScanner = showScannerFor === actor.name;
 
                 return (
-                  <div
-                    key={actor.name}
-                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                      isSelected
-                        ? "border-primary bg-primary/10"
-                        : hasAccess
-                        ? "border-primary/40 bg-primary/5 hover:bg-primary/10"
-                        : "border-muted bg-muted/20 hover:bg-muted/30"
-                    }`}
-                    onClick={() => {
-                      // Update selected actor - this needs to be handled by parent
-                      // For now, just show basic info
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          hasAccess ? "bg-primary/20" : "bg-muted"
-                        }`}
-                      >
-                        <span className="font-semibold text-sm">
-                          {actor.name[0].toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-sm">{actor.name}</h4>
-                        <p className="text-xs text-muted-foreground">
-                          {actor.name === "Alice" ? "Data Owner" : "Recipient"}
-                        </p>
-                      </div>
-                      {hasAccess ? (
-                        <div className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
-                          Access
+                  <div key={actor.name}>
+                    <div
+                      className={`p-3 rounded-lg border transition-all ${
+                        isSelected
+                          ? "border-primary bg-primary/10"
+                          : hasAccess
+                          ? "border-primary/40 bg-primary/5"
+                          : "border-muted bg-muted/20"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            hasAccess ? "bg-primary/20" : "bg-muted"
+                          }`}
+                        >
+                          <span className="font-semibold text-sm">
+                            {actor.name[0].toUpperCase()}
+                          </span>
                         </div>
-                      ) : (
-                        <div className="text-xs bg-destructive/20 text-destructive px-2 py-1 rounded-full">
-                          No Access
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-sm">{actor.name}</h4>
+                          <p className="text-xs text-muted-foreground">
+                            {actor.name === "Alice" ? "Data Owner" : "Recipient"}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          {/* Show QR button */}
+                          {actor.keyPair && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowQRFor(showingQR ? null : actor.name)}
+                              title="Show QR Code"
+                            >
+                              <QrCode className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {/* Scan QR button (only for Alice to scan others) */}
+                          {actor.name === "Alice" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowScannerFor(showingScanner ? null : "scan")}
+                              title="Scan QR Code"
+                            >
+                              <ScanLine className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                        {hasAccess ? (
+                          <div className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
+                            Access
+                          </div>
+                        ) : (
+                          <div className="text-xs bg-destructive/20 text-destructive px-2 py-1 rounded-full">
+                            No Access
+                          </div>
+                        )}
+                      </div>
+
+                      {/* QR Code Display */}
+                      {showingQR && actor.keyPair && (
+                        <div className="mt-4 p-4 bg-white rounded-lg flex flex-col items-center">
+                          <QRCodeSVG value={onGenerateQR(actor.name)} size={200} level="M" />
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {actor.name}'s Public Key
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Scan/Paste Interface */}
+                      {showingScanner && (
+                        <div className="mt-4 space-y-3">
+                          <div className="space-y-2">
+                            <label className="text-xs text-muted-foreground">
+                              Paste QR code data or select from available keys:
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Paste QR code data here..."
+                              value={pasteQRInput}
+                              onChange={(e) => setPasteQRInput(e.target.value)}
+                              className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background"
+                            />
+                            <Button
+                              onClick={async () => {
+                                if (pasteQRInput) {
+                                  await onScanQR(pasteQRInput);
+                                  setPasteQRInput("");
+                                  setShowScannerFor(null);
+                                }
+                              }}
+                              size="sm"
+                              className="w-full"
+                              disabled={!pasteQRInput}
+                            >
+                              Grant Access
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </div>

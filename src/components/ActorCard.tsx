@@ -1,7 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Shield } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
 
 interface ActorCardProps {
   name: string;
@@ -9,7 +8,6 @@ interface ActorCardProps {
   status?: "active" | "success" | "revoked" | "default";
   align?: "left" | "right";
   children?: React.ReactNode;
-  qrCode?: string; // QR code data to display
 }
 
 export const ActorCard = ({ 
@@ -17,8 +15,7 @@ export const ActorCard = ({
   role, 
   status = "default", 
   align = "left",
-  children,
-  qrCode
+  children
 }: ActorCardProps) => {
   const getStatusColor = () => {
     switch (status) {
@@ -66,11 +63,6 @@ export const ActorCard = ({
         </div>
         {getStatusBadge()}
       </div>
-      {qrCode && (
-        <div className="flex justify-center my-4 p-4 bg-white rounded-lg">
-          <QRCodeSVG value={qrCode} size={180} level="M" />
-        </div>
-      )}
       {children}
     </Card>
   );
