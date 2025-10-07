@@ -1,4 +1,4 @@
-import { X, Key as KeyIcon, QrCode, ScanLine } from "lucide-react";
+import { X, Key as KeyIcon, QrCode, ScanLine, Copy, ClipboardPaste } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DataDisplay } from "./DataDisplay";
@@ -7,6 +7,7 @@ import { IPFSLink } from "./IPFSLink";
 import { QRCodeSVG } from "qrcode.react";
 import type { KeyPair } from "@/lib/egendata";
 import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 interface ExplorePanelProps {
   isOpen: boolean;
@@ -125,15 +126,15 @@ export const ExplorePanel = ({
                               <QrCode className="w-4 h-4" />
                             </Button>
                           )}
-                          {/* Scan QR button (only for Alice to scan others) */}
-                          {actor.name === "Alice" && (
+                          {/* Paste button to grant access */}
+                          {actor.name !== "Alice" && (
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setShowScannerFor(showingScanner ? null : "scan")}
-                              title="Scan QR Code"
+                              onClick={() => setShowScannerFor(showingScanner ? null : actor.name)}
+                              title="Paste key to grant access"
                             >
-                              <ScanLine className="w-4 h-4" />
+                              <ClipboardPaste className="w-4 h-4" />
                             </Button>
                           )}
                         </div>
@@ -155,6 +156,20 @@ export const ExplorePanel = ({
                           <p className="text-xs text-muted-foreground mt-2">
                             {actor.name}'s Public Key
                           </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3"
+                            onClick={() => {
+                              navigator.clipboard.writeText(onGenerateQR(actor.name));
+                              toast({
+                                title: "Copied!",
+                                description: `${actor.name}'s public key copied to clipboard`,
+                              });
+                            }}
+                          >
+                            <Copy className="w-4 h-4 mr-2" /> Copy Key
+                          </Button>
                         </div>
                       )}
 
@@ -163,29 +178,38 @@ export const ExplorePanel = ({
                         <div className="mt-4 space-y-3">
                           <div className="space-y-2">
                             <label className="text-xs text-muted-foreground">
-                              Paste QR code data or select from available keys:
+                              Paste public key data to grant {actor.name} access:
                             </label>
                             <input
                               type="text"
-                              placeholder="Paste QR code data here..."
+                              placeholder="Paste public key data here..."
                               value={pasteQRInput}
                               onChange={(e) => setPasteQRInput(e.target.value)}
                               className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background"
                             />
-                            <Button
-                              onClick={async () => {
-                                if (pasteQRInput) {
-                                  await onScanQR(pasteQRInput);
-                                  setPasteQRInput("");
-                                  setShowScannerFor(null);
-                                }
-                              }}
-                              size="sm"
-                              className="w-full"
-                              disabled={!pasteQRInput}
-                            >
-                              Grant Access
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={async () => {
+                                  if (pasteQRInput) {
+                                    await onScanQR(pasteQRInput);
+                                    setPasteQRInput("");
+                                    setShowScannerFor(null);
+                                  }
+                                }}
+                                size="sm"
+                                className="flex-1"
+                                disabled={!pasteQRInput}
+                              >
+                                Grant Access to {actor.name}
+                              </Button>
+                              <Button
+                                onClick={() => setShowScannerFor(null)}
+                                size="sm"
+                                variant="outline"
+                              >
+                                Cancel
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       )}
