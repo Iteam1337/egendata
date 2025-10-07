@@ -499,7 +499,82 @@ ipfs.pubsub.subscribe(ipnsName, (msg) => {
               </pre>
             </Card>
 
-            <h3 className="text-2xl font-semibold mb-3">7.4 QR Code Key Exchange</h3>
+            <h3 className="text-2xl font-semibold mb-3">7.4 Access Control and Write Permissions</h3>
+            <p className="text-muted-foreground mb-4">
+              In the Egendata protocol, access control operates on two distinct levels: read access and write access.
+            </p>
+            
+            <h4 className="text-xl font-semibold mb-3">7.4.1 Who Can Modify User Data?</h4>
+            <p className="text-muted-foreground mb-4">
+              Write access is controlled exclusively through IPNS (InterPlanetary Name System) private keys:
+            </p>
+            <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
+              <li><strong>Data owner:</strong> Only the holder of the IPNS private key can update the IPNS pointer to reference new data versions</li>
+              <li><strong>IPFS immutability:</strong> No one can modify existing data in IPFS - only create new versions with new CIDs</li>
+              <li><strong>Update mechanism:</strong> Updating data means creating a new keystone with a new CID and updating the IPNS name to point to it</li>
+            </ul>
+
+            <h4 className="text-xl font-semibold mb-3">7.4.2 Key Storage</h4>
+            <p className="text-muted-foreground mb-4">
+              IPNS private keys MUST be stored securely:
+            </p>
+            <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
+              <li><strong>Browser storage:</strong> For demo purposes, keys can be stored in IndexedDB or localStorage (not recommended for production)</li>
+              <li><strong>Hardware security:</strong> Production implementations should use hardware security modules (HSM), secure enclaves, or hardware tokens</li>
+              <li><strong>Key derivation:</strong> Keys can be derived from user passwords using PBKDF2 or Argon2, though this requires careful key management</li>
+              <li><strong>Backup responsibility:</strong> Users are responsible for backing up their IPNS keys - lost keys mean permanent loss of write access</li>
+            </ul>
+
+            <h4 className="text-xl font-semibold mb-3">7.4.3 Delegating Write Permissions</h4>
+            <p className="text-muted-foreground mb-4">
+              There are several approaches to grant write access to other parties:
+            </p>
+            <Card className="p-4 mb-4 bg-purple-50 border-purple-200">
+              <p className="text-sm font-semibold text-purple-900 mb-2">Option 1: Share IPNS Private Key</p>
+              <ul className="list-disc pl-6 text-sm text-purple-900 space-y-1">
+                <li>Securely share the IPNS private key with trusted parties</li>
+                <li>Recipients can update the IPNS pointer with new keystones</li>
+                <li><strong>Risk:</strong> Shared key holders have full write control - cannot be selectively revoked</li>
+              </ul>
+            </Card>
+            <Card className="p-4 mb-4 bg-purple-50 border-purple-200">
+              <p className="text-sm font-semibold text-purple-900 mb-2">Option 2: Multiple IPNS Names with Aggregation</p>
+              <ul className="list-disc pl-6 text-sm text-purple-900 space-y-1">
+                <li>Each writer maintains their own IPNS name for their contributions</li>
+                <li>A root IPNS name references an aggregated index of all contributor IPNS names</li>
+                <li>Writers can update their own data independently</li>
+                <li><strong>Benefit:</strong> Fine-grained control - each party manages their own namespace</li>
+              </ul>
+            </Card>
+            <Card className="p-4 mb-6 bg-purple-50 border-purple-200">
+              <p className="text-sm font-semibold text-purple-900 mb-2">Option 3: Smart Contract or Consensus Mechanism</p>
+              <ul className="list-disc pl-6 text-sm text-purple-900 space-y-1">
+                <li>Use blockchain or distributed ledger to manage write permissions</li>
+                <li>Define policies for who can update which data and under what conditions</li>
+                <li>Updates are validated by the consensus mechanism before being published</li>
+                <li><strong>Benefit:</strong> Programmable, auditable access control with multi-party governance</li>
+              </ul>
+            </Card>
+
+            <h4 className="text-xl font-semibold mb-3">7.4.4 Example: Collaborative Health Data</h4>
+            <p className="text-muted-foreground mb-4">
+              A patient can grant their doctor write access to specific medical records:
+            </p>
+            <pre className="text-xs bg-muted/30 p-4 rounded overflow-x-auto mb-6">
+{`// Patient creates a dedicated IPNS name for lab results
+const labResultsIPNS = await ipfs.name.create();
+
+// Doctor receives the IPNS private key (securely transmitted)
+// Doctor can now add new lab results:
+const newResult = encryptForPatient(labData, patientPublicKey);
+const newCID = await ipfs.add(newResult);
+await ipfs.name.publish(labResultsIPNS, newCID);
+
+// Patient's main health record references this IPNS name
+// Patient retains read access; doctor can write new results`}
+            </pre>
+
+            <h3 className="text-2xl font-semibold mb-3">7.5 QR Code Key Exchange</h3>
             <p className="text-muted-foreground mb-4">
               Public keys can be shared via QR codes for peer-to-peer key exchange. The demo implementation uses 
               Base45 encoding for QR code compatibility.
