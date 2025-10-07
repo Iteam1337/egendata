@@ -11,6 +11,7 @@ import { IPFSStatus } from "@/components/IPFSStatus";
 import { IPFSLink } from "@/components/IPFSLink";
 import { ConceptExplainer } from "@/components/ConceptExplainer";
 import { Footer } from "@/components/Footer";
+import { ExplorePanel } from "@/components/ExplorePanel";
 import { EgendataClient, IPFSStorage, type KeyPair } from "@/lib/egendata";
 import { encodeKeyForQR, decodeKeyFromQR, validateKeyData, qrKeyDataToJWK } from "@/lib/qr-key-exchange";
 import {
@@ -81,6 +82,10 @@ const Index = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [newRecipientName, setNewRecipientName] = useState("");
   const [customRecipients, setCustomRecipients] = useState<Array<{ name: string; keyPair: KeyPair }>>([]);
+
+  // Explore panel state
+  const [explorePanelOpen, setExplorePanelOpen] = useState(false);
+  const [selectedActorForExplore, setSelectedActorForExplore] = useState<string | null>(null);
 
   const DATA_ID = "alice-sensitive-data";
   const steps = ["Alice's Data", "Share with Bob", "Share with Charlie", "Revoke Bob", "Re-grant via QR"];
@@ -1108,7 +1113,13 @@ const Index = () => {
                     return (
                       <Card
                         key={actor.name}
-                        className={`p-4 ${hasAccess ? "border-primary/40 bg-primary/5" : "border-muted bg-muted/20"}`}
+                        className={`p-4 cursor-pointer hover:shadow-md transition-shadow ${
+                          hasAccess ? "border-primary/40 bg-primary/5" : "border-muted bg-muted/20"
+                        }`}
+                        onClick={() => {
+                          setSelectedActorForExplore(actor.name);
+                          setExplorePanelOpen(true);
+                        }}
                       >
                         <div className="flex items-center gap-2 mb-3">
                           <div
@@ -1137,15 +1148,11 @@ const Index = () => {
                           )}
                         </div>
 
-                        <DataDisplay
-                          title="Decrypted Data"
-                          data={decryptedData ? JSON.stringify(decryptedData, null, 2) : "No data read yet"}
-                          variant={isRevoked || !hasAccess ? "encrypted" : "decrypted"}
-                          isEncrypted={isRevoked || !hasAccess}
-                        />
-
                         <Button
-                          onClick={() => handleReadAsActor(actor.name, actor.keyPair!.privateKey)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReadAsActor(actor.name, actor.keyPair!.privateKey);
+                          }}
                           disabled={!actor.keyPair || !encryptedData}
                           className="mt-3 w-full"
                           size="sm"
@@ -1157,60 +1164,6 @@ const Index = () => {
                     );
                   })}
                 </div>
-              </Card>
-
-              {/* Keyring display */}
-              <Card className="p-6 bg-muted/30">
-                <h3 className="font-semibold text-lg mb-4">Current Keyring</h3>
-                <KeyRingDisplay
-                  recipients={accessList}
-                  getKeyPair={(name) => {
-                    if (name === "Alice") return alice ?? undefined;
-                    if (name === "Bob") return bob ?? undefined;
-                    if (name === "Charlie") return charlie ?? undefined;
-                    const custom = customRecipients.find((r) => r.name === name);
-                    return custom?.keyPair;
-                  }}
-                  interactive={true}
-                  onRemoveKey={async (name) => {
-                    if (name === "Bob") {
-                      await handleRevokeBob();
-                    } else if (name === "Charlie") {
-                      await handleRevokeCharlie();
-                    } else {
-                      await handleRevokeCustomRecipient(name);
-                    }
-                  }}
-                  availableKeys={[
-                    ...(alice ? [{ name: "Alice", keyPair: alice }] : []),
-                    ...(bob ? [{ name: "Bob", keyPair: bob }] : []),
-                    ...(charlie ? [{ name: "Charlie", keyPair: charlie }] : []),
-                    ...customRecipients,
-                  ]}
-                  onAddKey={async (name) => {
-                    if (!alice) return;
-                    let keyPair: KeyPair | undefined;
-                    if (name === "Bob") keyPair = bob ?? undefined;
-                    else if (name === "Charlie") keyPair = charlie ?? undefined;
-                    else keyPair = customRecipients.find((r) => r.name === name)?.keyPair;
-                    if (!keyPair) return;
-                    try {
-                      await egendata.reGrantAccess(DATA_ID, name, keyPair.publicKey, alice.privateKey);
-                      const newAccessList = await getAccessListNames();
-                      setAccessList(newAccessList);
-                      toast({
-                        title: "Access granted",
-                        description: `${name} now has access`,
-                      });
-                    } catch {
-                      toast({
-                        title: "Error",
-                        description: "Could not grant access",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
-                />
               </Card>
             </div>
           )}
@@ -1299,6 +1252,72 @@ const Index = () => {
       </div>
 
       <Footer />
+
+      {/* Explore Panel */}
+      <ExplorePanel
+        isOpen={explorePanelOpen}
+        onClose={() => {
+          setExplorePanelOpen(false);
+          setSelectedActorForExplore(null);
+        }}
+        selectedActor={
+          selectedActorForExplore
+            ? {
+                name: selectedActorForExplore,
+                keyPair:
+                  selectedActorForExplore === "Alice"
+                    ? alice
+                    : selectedActorForExplore === "Bob"
+                    ? bob
+                    : selectedActorForExplore === "Charlie"
+                    ? charlie
+                    : customRecipients.find((r) => r.name === selectedActorForExplore)?.keyPair ?? null,
+                hasAccess: accessList.includes(selectedActorForExplore),
+                decryptedData: decryptedDataMap.get(selectedActorForExplore),
+              }
+            : null
+        }
+        dataCID={dataCID}
+        accessList={accessList}
+        allActors={[
+          ...(alice ? [{ name: "Alice", keyPair: alice }] : []),
+          ...(bob ? [{ name: "Bob", keyPair: bob }] : []),
+          ...(charlie ? [{ name: "Charlie", keyPair: charlie }] : []),
+          ...customRecipients.map((r) => ({ name: r.name, keyPair: r.keyPair })),
+        ]}
+        onRemoveKey={async (name) => {
+          if (name === "Bob") {
+            await handleRevokeBob();
+          } else if (name === "Charlie") {
+            await handleRevokeCharlie();
+          } else {
+            await handleRevokeCustomRecipient(name);
+          }
+        }}
+        onAddKey={async (name) => {
+          if (!alice) return;
+          let keyPair: KeyPair | undefined;
+          if (name === "Bob") keyPair = bob ?? undefined;
+          else if (name === "Charlie") keyPair = charlie ?? undefined;
+          else keyPair = customRecipients.find((r) => r.name === name)?.keyPair;
+          if (!keyPair) return;
+          try {
+            await egendata.reGrantAccess(DATA_ID, name, keyPair.publicKey, alice.privateKey);
+            const newAccessList = await getAccessListNames();
+            setAccessList(newAccessList);
+            toast({
+              title: "Access granted",
+              description: `${name} now has access`,
+            });
+          } catch {
+            toast({
+              title: "Error",
+              description: "Could not grant access",
+              variant: "destructive",
+            });
+          }
+        }}
+      />
     </div>
   );
 };
