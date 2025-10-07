@@ -427,7 +427,9 @@ const Index = () => {
   };
 
   const handleAddRecipient = async () => {
-    if (!newRecipientName.trim() || !alice) {
+    const trimmedName = newRecipientName.trim();
+    
+    if (!trimmedName || !alice) {
       toast({
         title: "Invalid name",
         description: "Enter a name for the new recipient",
@@ -436,19 +438,30 @@ const Index = () => {
       return;
     }
 
+    // Check if name already exists
+    const existingNames = ["Alice", "Bob", "Charlie", ...customRecipients.map(r => r.name)];
+    if (existingNames.includes(trimmedName)) {
+      toast({
+        title: "Name already exists",
+        description: "Choose a different name for the recipient",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      const newKeyPair = await egendata.generateKeyPair(newRecipientName);
-      await egendata.reGrantAccess(DATA_ID, newRecipientName, newKeyPair.publicKey, alice.privateKey);
+      const newKeyPair = await egendata.generateKeyPair(trimmedName);
+      await egendata.reGrantAccess(DATA_ID, trimmedName, newKeyPair.publicKey, alice.privateKey);
 
       const newAccessList = await getAccessListNames();
       setAccessList(newAccessList);
 
-      setCustomRecipients([...customRecipients, { name: newRecipientName, keyPair: newKeyPair }]);
+      setCustomRecipients([...customRecipients, { name: trimmedName, keyPair: newKeyPair }]);
       setNewRecipientName("");
 
       toast({
         title: "Recipient added!",
-        description: `${newRecipientName} now has access to the data`,
+        description: `${trimmedName} now has access to the data`,
       });
     } catch (error) {
       console.error("Add recipient error:", error);
