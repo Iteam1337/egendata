@@ -1,4 +1,29 @@
-# Welcome to your Lovable project
+# egenDATA - Decentralized Self-Sovereign Data Protocol
+
+egenDATA is an interactive demonstration of a cryptographic protocol for self-sovereign data management. It enables communication-less access control over encrypted information stored on decentralized networks using the **keystone pattern**.
+
+## 🔗 Project Resources
+
+- **Live Demo**: https://lovable.dev/projects/ba6e6cbe-cbc2-4e2a-8d04-d81bc1fc742e
+- **Source Code**: https://github.com/Iteam1337/egendata
+- **Protocol Documentation**: See `/rfc` route in the app
+
+## 🎯 What is egenDATA?
+
+egenDATA demonstrates a novel approach to data ownership where:
+- Data owners can encrypt data once and share it with multiple recipients
+- Access can be granted or revoked instantly without communicating with recipients
+- All data is stored on decentralized IPFS storage
+- Recipients maintain their own cryptographic keys
+- No central authority controls access to the data
+
+## ✨ Key Features
+
+- **Communication-less Access Control**: Revoke access without notifying recipients
+- **Decentralized Storage**: Data stored on IPFS for censorship resistance
+- **QR Code Key Exchange**: Share cryptographic keys securely via QR codes
+- **Multi-recipient Support**: Add unlimited recipients to encrypted data
+- **Interactive Demo**: Step-by-step walkthrough of the protocol
 
 ## Project info
 

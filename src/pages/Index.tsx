@@ -471,12 +471,6 @@ const Index = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="space-y-8">
-          <IPFSStatus 
-            isInitialized={ipfsReady}
-            isInitializing={ipfsInitializing}
-            error={ipfsError}
-          />
-          
           <StepIndicator steps={steps} currentStep={step} />
 
         {/* Step 0: Introduction */}
@@ -1259,6 +1253,15 @@ const Index = () => {
           </div>
         )}
         </div>
+      </div>
+      
+      {/* IPFS Status above Footer */}
+      <div className="max-w-7xl mx-auto px-6 pb-8">
+        <IPFSStatus 
+          isInitialized={ipfsReady}
+          isInitializing={ipfsInitializing}
+          error={ipfsError}
+        />
       </div>
       
       <Footer />

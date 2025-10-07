@@ -45,7 +45,7 @@ export const Footer = () => {
                 IPFS Documentation
               </a>
               <a 
-                href="https://github.com" 
+                href="https://github.com/Iteam1337/egendata" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
