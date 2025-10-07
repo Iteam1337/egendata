@@ -479,29 +479,97 @@ const Index = () => {
         {step === 0 && (
           <div className="animate-fade-in space-y-8">
             <div className="space-y-4">
-              <p className="text-sm italic font-serif text-muted-foreground">Interactive Demo:</p>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                <Shield className="w-4 h-4" />
+                Interactive Demo
+              </div>
               <h2 className="text-4xl md:text-5xl font-bold leading-tight">
-                Decentralized Self-Sovereign Data
+                True Data Ownership with<br/>
+                Communication-less Access Control
               </h2>
-              <p className="text-lg text-muted-foreground">
-                Follow Alice's story as she maintains full control over her sensitive data, sharing it securely via IPFS while retaining the power to grant and revoke access without needing permission or communication with recipients.
+              <p className="text-lg text-muted-foreground max-w-3xl">
+                egenDATA is a protocol for self-sovereign data management using the <strong>keystone pattern</strong>. 
+                It enables you to encrypt data once, share it with multiple recipients, and revoke access 
+                instantly—without needing to communicate with or get permission from recipients.
               </p>
             </div>
 
+            <div className="grid md:grid-cols-3 gap-4">
+              <Card className="p-5 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+                <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center mb-3">
+                  <Lock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="font-semibold mb-2">Self-Sovereign</h3>
+                <p className="text-sm text-muted-foreground">
+                  You own and control your data completely. No platform, company, or third party can access, share, or revoke permissions without you.
+                </p>
+              </Card>
+
+              <Card className="p-5 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+                <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center mb-3">
+                  <Database className="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="font-semibold mb-2">Decentralized</h3>
+                <p className="text-sm text-muted-foreground">
+                  Data is stored on IPFS (or any immutable storage). No central server controls access or can censor your data.
+                </p>
+              </Card>
+
+              <Card className="p-5 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20">
+                <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center mb-3">
+                  <LockOpen className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <h3 className="font-semibold mb-2">Communication-less</h3>
+                <p className="text-sm text-muted-foreground">
+                  Revoke access instantly by updating the keystone. No need to notify recipients or wait for their cooperation.
+                </p>
+              </Card>
+            </div>
+
             <Card className="p-8 bg-muted/30">
-              <h3 className="font-semibold text-lg mb-4">The Story</h3>
+              <h3 className="font-semibold text-lg mb-4">Why This Demo?</h3>
               <p className="text-muted-foreground mb-6">
-                Alice has sensitive data she wants to store securely in IPFS. She decides to share it with Bob, 
-                then also with Charlie. But when she changes her mind, she removes Bob's access. After some time, she 
-                gives Bob another chance by scanning his QR code with the CID.
+                This interactive demo walks you through Alice's journey as she encrypts sensitive data, 
+                shares it with Bob and Charlie via IPFS, revokes Bob's access without telling him, 
+                and later re-grants it using a QR code. You'll see how the keystone pattern enables 
+                efficient access control without ever re-encrypting the data.
               </p>
+              
+              <div className="bg-background/50 rounded-lg p-4 border border-border mb-6">
+                <p className="text-sm text-muted-foreground mb-3">
+                  <strong className="text-foreground">What you'll learn:</strong>
+                </p>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">→</span>
+                    <span>How the keystone pattern separates data encryption from access control</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">→</span>
+                    <span>Why symmetric (AES) and asymmetric (RSA) encryption are combined</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">→</span>
+                    <span>How IPFS provides immutable, content-addressed storage</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">→</span>
+                    <span>How access can be revoked without contacting recipients</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary mt-0.5">→</span>
+                    <span>How QR codes enable peer-to-peer key exchange</span>
+                  </li>
+                </ul>
+              </div>
+
               <Button 
                 onClick={handleGenerateKeys} 
                 size="lg" 
                 className="w-full"
                 disabled={!ipfsReady}
               >
-                {ipfsInitializing ? 'Starting IPFS...' : 'Start the Story'} <ArrowRight className="w-5 h-5 ml-2" />
+                {ipfsInitializing ? 'Starting IPFS...' : 'Start the Interactive Demo'} <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Card>
 
