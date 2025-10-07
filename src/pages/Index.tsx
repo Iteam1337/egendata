@@ -1323,16 +1323,6 @@ const Index = () => {
                         </pre>
                       </div>
                     )}
-                    {bob && !bobRevoked && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={handleRevokeBob}
-                        className="w-full"
-                      >
-                        <X className="w-4 h-4 mr-2" /> Revoke Access
-                      </Button>
-                    )}
                   </div>
                 </ActorCard>
 
@@ -1355,16 +1345,6 @@ const Index = () => {
                           {JSON.stringify(decryptedDataMap.get("Charlie"), null, 2)}
                         </pre>
                       </div>
-                    )}
-                    {charlie && !charlieRevoked && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={handleRevokeCharlie}
-                        className="w-full"
-                      >
-                        <X className="w-4 h-4 mr-2" /> Revoke Access
-                      </Button>
                     )}
                   </div>
                 </ActorCard>
