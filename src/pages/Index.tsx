@@ -259,6 +259,13 @@ const Index = () => {
       setAccessList(newAccessList);
       setStep(4);
 
+      // Auto-generate Bob's QR code for step 4
+      if (bob) {
+        const qrData = encodeKeyForQR("Bob", bob.publicKeyJWK);
+        setBobQRData(qrData);
+        setShowBobQR(true);
+      }
+
       toast({
         title: "Access revoked!",
         description: "Alice removed Bob's access",
@@ -303,11 +310,6 @@ const Index = () => {
     const qrData = encodeKeyForQR("Bob", bob.publicKeyJWK);
     setBobQRData(qrData);
     setShowBobQR(true);
-
-    toast({
-      title: "QR code generated!",
-      description: "Bob can now share his key via QR code",
-    });
   };
 
   const handleGenerateCharlieQR = () => {
@@ -880,35 +882,27 @@ const Index = () => {
               <Card className="p-6 bg-muted/30">
                 <h3 className="font-semibold text-lg mb-4">Step 4: Re-grant Access via QR Code</h3>
                 <p className="text-muted-foreground mb-6">
-                  Alice decides to give Bob another chance. Bob can share his public key via a QR code, and Alice scans
+                  Alice decides to give Bob another chance. Bob shares his public key via a QR code shown below, and Alice scans
                   it to restore his access. This demonstrates peer-to-peer key exchange.
                 </p>
 
-                <div className="grid md:grid-cols-2 gap-4 mb-6">
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium">Step 1: Bob generates QR code</h4>
-                    <Button onClick={handleGenerateBobQR} disabled={!bob} variant="outline" className="w-full">
-                      <QrCode className="w-4 h-4 mr-2" /> Generate Bob's QR Code
-                    </Button>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium">Step 2: Alice scans it</h4>
-                    <Button
-                      onClick={() => {
-                        setShowScanner(true);
-                        setScanningFor("Bob");
-                      }}
-                      className="w-full"
-                    >
-                      <ScanLine className="w-4 h-4 mr-2" /> Scan Bob's QR Code
-                    </Button>
-                  </div>
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium mb-3">Alice scans Bob's QR code to restore access:</h4>
+                  <Button
+                    onClick={() => {
+                      setShowScanner(true);
+                      setScanningFor("Bob");
+                    }}
+                    className="w-full"
+                    size="lg"
+                  >
+                    <ScanLine className="w-4 h-4 mr-2" /> Scan Bob's QR Code
+                  </Button>
                 </div>
 
                 <div className="space-y-4 mt-6">
                   <ActorCard name="Alice" role="Data Owner" status="active" align="left" />
-                  <ActorCard name="Bob" role="Wants Access" status="default" align="right" />
+                  <ActorCard name="Bob" role="Wants Access" status="default" align="right" qrCode={bobQRData} />
                   <ActorCard name="Charlie" role="Has Access" status="success" align="left" />
                 </div>
               </Card>
