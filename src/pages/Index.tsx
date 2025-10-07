@@ -877,14 +877,16 @@ const Index = () => {
                   <ActorCard name="Alice" role="Data Owner" status="active" align="left">
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-xs font-semibold mb-2">Who can read Alice's data:</p>
+                        <p className="text-xs font-semibold mb-2">Who can read Alice&apos;s data:</p>
                         <div className="flex flex-wrap gap-2">
                           <span className="text-xs px-2 py-1 bg-primary/20 text-primary rounded-full">
                             Alice
                           </span>
-                          <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
-                            Bob ✓
-                          </span>
+                          {!bobRevoked && (
+                            <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
+                              Bob ✓
+                            </span>
+                          )}
                           <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
                             Charlie ✓
                           </span>
@@ -902,12 +904,12 @@ const Index = () => {
                       )}
                     </div>
                   </ActorCard>
-                  <ActorCard name="Bob" role="Revoked" status="revoked" align="right">
+                  <ActorCard name="Bob" role={bobRevoked ? "Revoked" : "Has Access"} status={bobRevoked ? "revoked" : "success"} align="right">
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-xs font-semibold mb-2">Can Bob read Alice's data?</p>
-                        <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
-                          Yes - still in keyring
+                        <p className="text-xs font-semibold mb-2">Can Bob read Alice&apos;s data?</p>
+                        <span className={`text-xs px-2 py-1 rounded-full ${bobRevoked ? 'bg-destructive/20 text-destructive' : 'bg-success/20 text-success'}`}>
+                          {bobRevoked ? 'No - removed from keyring' : 'Yes - still in keyring ✓'}
                         </span>
                       </div>
                       {bob && (
@@ -917,8 +919,16 @@ const Index = () => {
                           onClick={() => handleReadAsActor("Bob", bob.privateKey)}
                           className="w-full"
                         >
-                          <Lock className="w-4 h-4 mr-2" /> Try Read as Bob
+                          <Lock className="w-4 h-4 mr-2" /> {bobRevoked ? 'Try Read as Bob' : 'Read Data as Bob'}
                         </Button>
+                      )}
+                      {decryptedDataMap.has("Bob") && (
+                        <div className="p-3 bg-success/10 border border-success/20 rounded-md">
+                          <p className="text-xs font-semibold text-success mb-2">✓ Decrypted Data:</p>
+                          <pre className="text-xs font-mono overflow-x-auto">
+                            {JSON.stringify(decryptedDataMap.get("Bob"), null, 2)}
+                          </pre>
+                        </div>
                       )}
                     </div>
                   </ActorCard>
