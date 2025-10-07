@@ -123,15 +123,28 @@ const RFC = () => {
               </div>
               <div>
                 <dt className="font-semibold text-foreground">Keystone</dt>
-                <dd className="ml-4">The data structure containing the encrypted data and keyring</dd>
+                <dd className="ml-4">
+                  The complete data package consisting of:
+                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                    <li><strong>Encrypted Data:</strong> The actual payload encrypted with a DEK</li>
+                    <li><strong>Keyring:</strong> Collection of wrapped DEKs for each recipient</li>
+                    <li><strong>IPFS Pointer:</strong> CID or IPNS name pointing to the current version</li>
+                    <li><strong>Metadata:</strong> Creation time, version, owner information</li>
+                  </ul>
+                  The keystone is stored in IPFS and can be referenced via either:
+                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                    <li><strong>CID (Content Identifier):</strong> Immutable hash of specific version</li>
+                    <li><strong>IPNS (InterPlanetary Name System):</strong> Mutable pointer that can be updated to point to new CIDs when data is re-encrypted</li>
+                  </ul>
+                </dd>
               </div>
               <div>
                 <dt className="font-semibold text-foreground">Keyring</dt>
-                <dd className="ml-4">A collection of wrapped DEKs, each encrypted for a specific recipient</dd>
+                <dd className="ml-4">A collection of wrapped DEKs, each encrypted for a specific recipient's public key. When access is revoked, a new keyring is created with a new DEK, excluding the revoked recipient.</dd>
               </div>
               <div>
                 <dt className="font-semibold text-foreground">DEK (Data Encryption Key)</dt>
-                <dd className="ml-4">The symmetric key used to encrypt the actual data payload</dd>
+                <dd className="ml-4">The symmetric AES-256-GCM key used to encrypt the actual data payload. A new DEK is generated during key rotation (access revocation).</dd>
               </div>
             </dl>
           </section>
@@ -248,15 +261,44 @@ const RFC = () => {
               <li><strong>Ceramic:</strong> Decentralized data network</li>
             </ul>
 
-            <h3 className="text-2xl font-semibold mb-3">4.3 Content Addressing</h3>
+            <h3 className="text-2xl font-semibold mb-3">4.3 Content Addressing with IPNS</h3>
             <p className="text-muted-foreground mb-4">
-              The storage layer MUST use content addressing (e.g., cryptographic hashes) to generate identifiers. 
-              This provides:
+              The storage layer combines two IPFS technologies for optimal data management:
+            </p>
+            <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
+              <li><strong>CID (Content Identifier):</strong> Immutable hash of each keystone version, provides verifiable data integrity</li>
+              <li><strong>IPNS (InterPlanetary Name System):</strong> Mutable pointer that references the current CID</li>
+            </ul>
+            
+            <Card className="p-6 mb-6 bg-muted/30">
+              <h4 className="font-semibold mb-3">IPNS Pointer Pattern</h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                When data is updated or access is revoked (requiring key rotation):
+              </p>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p><strong>1.</strong> New keystone is created with new DEK and encrypted data → New CID generated</p>
+                <p><strong>2.</strong> IPNS name is updated to point to the new CID</p>
+                <p><strong>3.</strong> Recipients using the IPNS name automatically get the latest version</p>
+                <p><strong>4.</strong> Old CID remains accessible for audit/history</p>
+              </div>
+              <div className="mt-4 p-3 bg-background rounded text-xs font-mono">
+                <p>IPNS: /ipns/k51qz...abc (always points to current version)</p>
+                <p className="text-muted-foreground">  ↓</p>
+                <p>CID v1: bafyb...123 (original encrypted data)</p>
+                <p>CID v2: bafyb...456 (after first key rotation)</p>
+                <p>CID v3: bafyb...789 (after second key rotation) ← current</p>
+              </div>
+            </Card>
+
+            <p className="text-muted-foreground mb-4">
+              This pattern provides:
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-6">
-              <li>Verifiable data integrity</li>
-              <li>Deduplication capabilities</li>
-              <li>Location independence</li>
+              <li>Verifiable data integrity through CIDs</li>
+              <li>Stable references through IPNS names</li>
+              <li>Complete version history</li>
+              <li>Automatic updates for authorized recipients</li>
+              <li>Immediate revocation - old CIDs become invalid for revoked users</li>
             </ul>
           </section>
 
@@ -323,17 +365,24 @@ const encryptedData = await new CompactEncrypt(
               <li>Re-encrypt the data payload with the new DEK</li>
               <li>Encrypt the new DEK for all remaining recipients (excluding the revoked party)</li>
               <li>Store the new keystone with re-encrypted data (creates new CID in IPFS)</li>
+              <li>Update the IPNS pointer to reference the new CID</li>
               <li>No communication with the revoked recipient is required</li>
             </ol>
             <Card className="p-4 mb-6 bg-emerald-50 border-emerald-200">
-              <p className="text-sm text-emerald-900 mb-2">
-                <strong>Enhanced Security:</strong> Key rotation ensures that revoked recipients cannot decrypt 
+              <p className="text-sm text-emerald-900 mb-3">
+                <strong>Enhanced Security Through Key Rotation:</strong> Key rotation ensures that revoked recipients cannot decrypt 
                 the data even if they cached the old encrypted payload. The old DEK becomes useless after revocation.
               </p>
-              <p className="text-sm text-emerald-900">
-                The new IPFS CID serves as a pointer to the re-encrypted version, while the old version remains 
-                immutable in storage but is no longer referenced.
+              <p className="text-sm text-emerald-900 mb-3">
+                <strong>IPNS Update Pattern:</strong> When access is revoked:
               </p>
+              <ul className="list-disc pl-6 text-sm text-emerald-900 space-y-1">
+                <li>New keystone stored → new CID generated (e.g., bafyb...789)</li>
+                <li>IPNS name updated to point to new CID</li>
+                <li>Authorized recipients automatically get latest version via IPNS</li>
+                <li>Revoked recipients still have old CID but missing from new keyring</li>
+                <li>Old versions remain in IPFS for audit trail</li>
+              </ul>
             </Card>
 
             <h3 className="text-2xl font-semibold mb-3">5.5 Data Retrieval</h3>
@@ -369,18 +418,24 @@ const encryptedData = await new CompactEncrypt(
               <li>A new symmetric DEK is generated</li>
               <li>The data is re-encrypted with the new DEK</li>
               <li>The new DEK is wrapped only for remaining recipients</li>
-              <li>A new IPFS CID is created, pointing to the re-encrypted data</li>
+              <li>A new IPFS CID is created, pointing to the re-encrypted keystone</li>
+              <li>The IPNS pointer is updated to reference the new CID</li>
             </ul>
             <p className="text-muted-foreground mb-4">
               This ensures that revoked recipients cannot decrypt future versions of the data, even if they 
-              cached the old encrypted payload. The old IPFS CID remains valid but points to obsolete data.
+              cached the old encrypted payload. By using IPNS, authorized recipients automatically reference 
+              the latest version without needing to track individual CIDs.
             </p>
             <Card className="p-4 mb-6 bg-blue-50 border-blue-200">
-              <p className="text-sm text-blue-900">
-                <strong>IPFS and Immutability:</strong> The old encrypted data remains accessible via its 
-                original CID, but without the new DEK, it cannot be decrypted by revoked parties. The new 
-                keystone with re-encrypted data gets a new CID, which is what authorized users reference going forward.
+              <p className="text-sm text-blue-900 mb-3">
+                <strong>IPFS Immutability + IPNS Mutability:</strong> This combination provides both security and convenience:
               </p>
+              <ul className="list-disc pl-6 text-sm text-blue-900 space-y-2">
+                <li><strong>Old CID remains accessible</strong> for audit/history, but revoked users aren't in the new keyring</li>
+                <li><strong>IPNS name stays constant</strong> - recipients always use the same IPNS reference</li>
+                <li><strong>IPNS automatically resolves</strong> to the latest CID with current keyring</li>
+                <li><strong>No manual updates needed</strong> - the IPNS pointer is updated by the data owner</li>
+              </ul>
             </Card>
 
             <h3 className="text-2xl font-semibold mb-3">6.3 Metadata Leakage</h3>
