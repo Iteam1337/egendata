@@ -1246,29 +1246,6 @@ const Index = () => {
             />
           )}
 
-          {/* Explore button - opens sidebar */}
-          {step >= 1 && (
-            <Card className="p-6 bg-muted/30">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-lg mb-2">Explore Data & Access Control</h3>
-                  <p className="text-sm text-muted-foreground">
-                    View encrypted data, actor details, keys, and manage the keyring
-                  </p>
-                </div>
-                <Button
-                  onClick={() => {
-                    setSelectedActorForExplore(null);
-                    setExplorePanelOpen(true);
-                  }}
-                  size="lg"
-                >
-                  Open Explorer
-                </Button>
-              </div>
-            </Card>
-          )}
-
           {/* Advanced features section at bottom */}
           {step >= 1 && (
             <div className="animate-fade-in">
