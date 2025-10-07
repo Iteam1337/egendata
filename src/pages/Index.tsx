@@ -779,7 +779,7 @@ const Index = () => {
                       )}
                     </div>
                   </ActorCard>
-                  <ActorCard name="Charlie" role="Recipient" status="default" align="left">
+                  <ActorCard name="Charlie" role="Recipient" status="default" align="right">
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Can Charlie read Alice's data?</p>
@@ -926,7 +926,7 @@ const Index = () => {
                       )}
                     </div>
                   </ActorCard>
-                  <ActorCard name="Charlie" role="Has Access" status="success" align="left">
+                  <ActorCard name="Charlie" role="Has Access" status="success" align="right">
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Can Charlie read Alice's data?</p>
@@ -1128,7 +1128,7 @@ const Index = () => {
                       </div>
                     </div>
                   </ActorCard>
-                  <ActorCard name="Charlie" role="Has Access" status="success" align="left">
+                  <ActorCard name="Charlie" role="Has Access" status="success" align="right">
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Can Charlie read Alice's data?</p>
@@ -1336,7 +1336,7 @@ const Index = () => {
                   </div>
                 </ActorCard>
 
-                <ActorCard name="Charlie" role="Recipient" status={charlieRevoked ? "revoked" : "success"} align="left">
+                <ActorCard name="Charlie" role="Recipient" status={charlieRevoked ? "revoked" : "success"} align="right">
                   <div className="space-y-3 mt-4">
                     {charlie && (
                       <Button
