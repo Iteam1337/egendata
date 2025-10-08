@@ -1,0 +1,58 @@
+{
+  "name": "@egendata/core",
+  "version": "0.1.0",
+  "description": "A decentralized protocol for self-sovereign data management using the keystone pattern",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage"
+  },
+  "keywords": [
+    "decentralized",
+    "encryption",
+    "ipfs",
+    "self-sovereign",
+    "data-management",
+    "keystone-pattern",
+    "privacy"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "jose": "^6.1.0"
+  },
+  "dependencies": {
+    "@helia/json": "^4.0.7",
+    "@helia/unixfs": "^5.1.0",
+    "@chainsafe/libp2p-noise": "^17.0.0",
+    "@chainsafe/libp2p-yamux": "^8.0.0",
+    "@libp2p/websockets": "^10.0.6",
+    "base-x": "^5.0.1",
+    "blockstore-core": "^6.0.2",
+    "cbor-x": "^1.6.0",
+    "datastore-core": "^11.0.2",
+    "helia": "^5.5.1",
+    "libp2p": "^3.0.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}
