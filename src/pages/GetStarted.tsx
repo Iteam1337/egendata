@@ -65,21 +65,21 @@ await client.revokeAccess('medical-record-1', 'Bob');
             <span className="text-sm font-medium">@egendata/core v0.1.0</span>
           </div>
           <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Kom igång med egenDATA
+            Get Started with egenDATA
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Ett decentraliserat protokoll för självsuverän datahantering med keystone-mönstret.
-            Kryptera, dela och återkalla åtkomst utan att kommunicera med mottagarna.
+            A decentralized protocol for self-sovereign data management with the keystone pattern.
+            Encrypt, share, and revoke access without communicating with recipients—built on cryptographic principles for maximum security.
           </p>
           <div className="flex gap-4 justify-center">
             <Button size="lg" asChild>
               <Link to="/">
                 <Code className="w-4 h-4 mr-2" />
-                Prova demo
+                Try Demo
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link to="/rfc">Läs dokumentation</Link>
+              <Link to="/rfc">Read Documentation</Link>
             </Button>
           </div>
         </div>
@@ -89,30 +89,30 @@ await client.revokeAccess('medical-record-1', 'Bob');
           <Card className="border-2">
             <CardHeader>
               <Lock className="w-8 h-8 text-primary mb-2" />
-              <CardTitle className="text-lg">Kommunikationslös åtkomstkontroll</CardTitle>
+              <CardTitle className="text-lg">Communication-less Access Control</CardTitle>
             </CardHeader>
             <CardContent className="text-muted-foreground">
-              Återkalla åtkomst omedelbart utan att behöva kontakta mottagarna
+              Revoke access instantly using cryptographic re-keying without contacting recipients
             </CardContent>
           </Card>
           
           <Card className="border-2">
             <CardHeader>
               <Database className="w-8 h-8 text-primary mb-2" />
-              <CardTitle className="text-lg">Decentraliserad lagring</CardTitle>
+              <CardTitle className="text-lg">Decentralized Storage</CardTitle>
             </CardHeader>
             <CardContent className="text-muted-foreground">
-              Lagra data på IPFS för permanent, distribuerad åtkomst
+              Store encrypted data on IPFS for permanent, tamper-proof distributed access
             </CardContent>
           </Card>
           
           <Card className="border-2">
             <CardHeader>
               <Key className="w-8 h-8 text-primary mb-2" />
-              <CardTitle className="text-lg">Keystone-mönstret</CardTitle>
+              <CardTitle className="text-lg">Keystone Pattern</CardTitle>
             </CardHeader>
             <CardContent className="text-muted-foreground">
-              Effektiv multi-mottagare kryptering med omedelbar återkallelse
+              Efficient multi-recipient encryption with instant revocation using industry-standard algorithms
             </CardContent>
           </Card>
         </div>
@@ -137,12 +137,12 @@ await client.revokeAccess('medical-record-1', 'Bob');
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Code className="w-5 h-5" />
-              2. Grundläggande användning
+              2. Basic Usage
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              Skapa en klient, generera nyckelpar och kryptera data för flera mottagare:
+              Create a client, generate key pairs, and encrypt data for multiple recipients with end-to-end encryption:
             </p>
             <div className="bg-muted/50 p-4 rounded-lg font-mono text-sm overflow-x-auto whitespace-pre">
               {codeExamples.basic}
@@ -155,12 +155,12 @@ await client.revokeAccess('medical-record-1', 'Bob');
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Lock className="w-5 h-5" />
-              3. Åtkomstkontroll
+              3. Secure Access Control
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              Återkalla åtkomst omedelbart utan kommunikation:
+              Revoke access instantly without communication—cryptographically enforced:
             </p>
             <div className="bg-muted/50 p-4 rounded-lg font-mono text-sm overflow-x-auto whitespace-pre">
               {codeExamples.revoke}
@@ -173,12 +173,12 @@ await client.revokeAccess('medical-record-1', 'Bob');
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Database className="w-5 h-5" />
-              4. Decentraliserad lagring med IPFS
+              4. Decentralized Storage with IPFS
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              Använd IPFS för permanent, decentraliserad datalagring:
+              Use IPFS for permanent, tamper-proof, decentralized data storage:
             </p>
             <div className="bg-muted/50 p-4 rounded-lg font-mono text-sm overflow-x-auto whitespace-pre">
               {codeExamples.ipfs}
@@ -189,44 +189,44 @@ await client.revokeAccess('medical-record-1', 'Bob');
         {/* API Overview */}
         <Card className="mb-8 border-2">
           <CardHeader>
-            <CardTitle>API-översikt</CardTitle>
+            <CardTitle>API Overview</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
                 <h4 className="font-semibold mb-2 flex items-center gap-2">
                   <Check className="w-4 h-4 text-primary" />
-                  Nyckelhantering
+                  Key Management
                 </h4>
                 <ul className="space-y-1 text-sm text-muted-foreground ml-6">
-                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">generateKeyPair(name)</code> - Generera RSA nyckelpar</li>
-                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">getKeyPair(name)</code> - Hämta sparat nyckelpar</li>
-                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">importPublicKey(jwk)</code> - Importera publik nyckel</li>
+                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">generateKeyPair(name)</code> - Generate RSA-OAEP 2048-bit key pair</li>
+                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">getKeyPair(name)</code> - Retrieve stored key pair</li>
+                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">importPublicKey(jwk)</code> - Import public key from JWK format</li>
                 </ul>
               </div>
               
               <div>
                 <h4 className="font-semibold mb-2 flex items-center gap-2">
                   <Check className="w-4 h-4 text-primary" />
-                  Datahantering
+                  Data Management
                 </h4>
                 <ul className="space-y-1 text-sm text-muted-foreground ml-6">
-                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">writeData(id, data, owner, recipients)</code> - Kryptera och spara data</li>
-                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">readData(id, recipient, privateKey)</code> - Dekryptera data</li>
-                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">updateData(id, newData, owner)</code> - Uppdatera data</li>
-                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">deleteData(id)</code> - Ta bort data</li>
+                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">writeData(id, data, owner, recipients)</code> - Encrypt with AES-256-GCM and store</li>
+                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">readData(id, recipient, privateKey)</code> - Decrypt data securely</li>
+                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">updateData(id, newData, owner)</code> - Update with automatic re-encryption</li>
+                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">deleteData(id)</code> - Permanently remove data</li>
                 </ul>
               </div>
               
               <div>
                 <h4 className="font-semibold mb-2 flex items-center gap-2">
                   <Check className="w-4 h-4 text-primary" />
-                  Åtkomstkontroll
+                  Access Control
                 </h4>
                 <ul className="space-y-1 text-sm text-muted-foreground ml-6">
-                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">revokeAccess(id, recipient)</code> - Återkalla åtkomst</li>
-                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">reGrantAccess(id, recipient, publicKey, privateKey)</code> - Återge åtkomst</li>
-                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">listRecipients(id)</code> - Lista mottagare</li>
+                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">revokeAccess(id, recipient)</code> - Instant cryptographic revocation</li>
+                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">reGrantAccess(id, recipient, publicKey, privateKey)</code> - Re-grant access</li>
+                  <li><code className="text-xs bg-muted px-1 py-0.5 rounded">listRecipients(id)</code> - List authorized recipients</li>
                 </ul>
               </div>
             </div>
@@ -236,25 +236,29 @@ await client.revokeAccess('medical-record-1', 'Bob');
         {/* Next Steps */}
         <Card className="border-2 border-primary/50 bg-primary/5">
           <CardHeader>
-            <CardTitle>Nästa steg</CardTitle>
+            <CardTitle>Next Steps</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary mt-0.5" />
-                <span>Utforska den <Link to="/" className="text-primary hover:underline">interaktiva demon</Link> för att se protokollet i aktion</span>
+                <span>Explore the <Link to="/" className="text-primary hover:underline">interactive demo</Link> to see the protocol in action</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary mt-0.5" />
-                <span>Läs den <Link to="/rfc" className="text-primary hover:underline">fullständiga RFC-dokumentationen</Link> för tekniska detaljer</span>
+                <span>Read the <Link to="/rfc" className="text-primary hover:underline">complete RFC documentation</Link> for security specifications</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary mt-0.5" />
-                <span>Kolla in <a href="https://github.com" className="text-primary hover:underline">GitHub-repot</a> för källkod och exempel</span>
+                <span>Check out the <a href="https://github.com" className="text-primary hover:underline">GitHub repository</a> for source code and examples</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary mt-0.5" />
-                <span>Testa med IPFS-lagring för decentraliserad datalagring</span>
+                <span>Review security best practices for key storage and management in production environments</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-5 h-5 text-primary mt-0.5" />
+                <span>Test with IPFS storage for decentralized, censorship-resistant data storage</span>
               </li>
             </ul>
           </CardContent>
