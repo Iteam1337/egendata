@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FileText, Github, ExternalLink } from "lucide-react";
+import { FileText, Github, ExternalLink, Package } from "lucide-react";
 
 export const Footer = () => {
   return (
@@ -28,6 +28,13 @@ export const Footer = () => {
           <div className="space-y-4">
             <h4 className="font-semibold text-sm">Resources</h4>
             <nav className="flex flex-col gap-3">
+              <Link 
+                to="/get-started" 
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Package className="w-4 h-4" />
+                Get Started (npm)
+              </Link>
               <Link 
                 to="/rfc" 
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
