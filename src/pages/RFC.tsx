@@ -11,12 +11,19 @@ const RFC = () => {
       <div className="border-b border-border bg-white sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
-            <Link to="/">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Demo
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link to="/">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Demo
+                </Button>
+              </Link>
+              <Link to="/get-started">
+                <Button variant="ghost" size="sm">
+                  Get Started
+                </Button>
+              </Link>
+            </div>
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-primary" />
               <span className="text-sm font-medium text-muted-foreground">Technical Specification</span>

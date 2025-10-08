@@ -1350,7 +1350,11 @@ const Index = () => {
                         <a href="/rfc" className="text-primary hover:underline">
                           RFC
                         </a>{" "}
-                        for technical details
+                        for technical details or{" "}
+                        <a href="/get-started" className="text-primary hover:underline">
+                          Get Started
+                        </a>{" "}
+                        with the npm package
                       </span>
                     </li>
                   </ul>
