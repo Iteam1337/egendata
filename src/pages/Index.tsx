@@ -1251,6 +1251,103 @@ const Index = () => {
                   Using Write Nodes, the service can publish without accessing Alice's root keys.
                 </p>
 
+                <div className="space-y-4 mb-6">
+                  <ActorCard name="Alice" role="Data Owner" status="active" align="left">
+                    <div className="space-y-3 mt-4">
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs font-semibold mb-2">Who can read Alice&apos;s data:</p>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="text-xs px-2 py-1 bg-primary/20 text-primary rounded-full">
+                            Alice
+                          </span>
+                          {!bobRevoked && (
+                            <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
+                              Bob ✓
+                            </span>
+                          )}
+                          <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
+                            Charlie ✓
+                          </span>
+                        </div>
+                      </div>
+                      {alice && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReadAsActor("Alice", alice.privateKey)}
+                          className="w-full"
+                        >
+                          <Lock className="w-4 h-4 mr-2" /> Read Data as Alice
+                        </Button>
+                      )}
+                      {decryptedDataMap.has("Alice") && (
+                        <div className="p-3 bg-success/10 border border-success/20 rounded-md">
+                          <p className="text-xs font-semibold text-success mb-2">✓ Decrypted Data:</p>
+                          <pre className="text-xs font-mono overflow-x-auto">
+                            {JSON.stringify(decryptedDataMap.get("Alice"), null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  </ActorCard>
+                  <ActorCard name="Bob" role={bobRevoked ? "Revoked" : "Has Access"} status={bobRevoked ? "revoked" : "success"} align="right">
+                    <div className="space-y-3 mt-4">
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs font-semibold mb-2">Can Bob read Alice&apos;s data?</p>
+                        <span className={`text-xs px-2 py-1 rounded-full ${bobRevoked ? 'bg-destructive/20 text-destructive' : 'bg-success/20 text-success'}`}>
+                          {bobRevoked ? 'No - removed from keyring' : 'Yes - Bob is in Alice\'s keyring ✓'}
+                        </span>
+                      </div>
+                      {bob && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReadAsActor("Bob", bob.privateKey)}
+                          className="w-full"
+                        >
+                          <Lock className="w-4 h-4 mr-2" /> {bobRevoked ? 'Try Read as Bob' : 'Read Data as Bob'}
+                        </Button>
+                      )}
+                      {decryptedDataMap.has("Bob") && (
+                        <div className="p-3 bg-success/10 border border-success/20 rounded-md">
+                          <p className="text-xs font-semibold text-success mb-2">✓ Decrypted Data:</p>
+                          <pre className="text-xs font-mono overflow-x-auto">
+                            {JSON.stringify(decryptedDataMap.get("Bob"), null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  </ActorCard>
+                  <ActorCard name="Charlie" role="Has Access" status="success" align="right">
+                    <div className="space-y-3 mt-4">
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs font-semibold mb-2">Can Charlie read Alice's data?</p>
+                        <span className="text-xs px-2 py-1 bg-success/20 text-success rounded-full">
+                          Yes - Charlie is in Alice's keyring ✓
+                        </span>
+                      </div>
+                      {charlie && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReadAsActor("Charlie", charlie.privateKey)}
+                          className="w-full"
+                        >
+                          <Lock className="w-4 h-4 mr-2" /> Read Data as Charlie
+                        </Button>
+                      )}
+                      {decryptedDataMap.has("Charlie") && (
+                        <div className="p-3 bg-success/10 border border-success/20 rounded-md">
+                          <p className="text-xs font-semibold text-success mb-2">✓ Decrypted Data:</p>
+                          <pre className="text-xs font-mono overflow-x-auto">
+                            {JSON.stringify(decryptedDataMap.get("Charlie"), null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  </ActorCard>
+                </div>
+
                 {!writeNode ? (
                   <div className="space-y-4">
                     <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
