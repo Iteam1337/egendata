@@ -12,7 +12,7 @@ export const Header = ({ onOpenExplorer }: HeaderProps) => {
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="Egendata logo" className="w-10 h-10" />
+            <img src={logo} alt="Egendata logo" className="w-10 h-10 rounded-lg" />
             <h1 className="text-xl font-semibold tracking-tight">
               egen<span className="text-primary">DATA</span>
             </h1>
