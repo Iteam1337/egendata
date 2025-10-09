@@ -26,19 +26,36 @@ export default function NodeVisualization() {
   const [client] = useState(() => new EgendataClient());
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [actorKeys, setActorKeys] = useState<Record<string, { publicKey: CryptoKey; privateKey: CryptoKey }>>({});
+  const [actorKeys, setActorKeys] = useState<Record<string, { publicKey: CryptoKey; privateKey: CryptoKey; publicKeyJWK: any }>>({});
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
+  const toggleNodeExpanded = (nodeId: string) => {
+    setExpandedNodes((prev) => {
+      const next = new Set(prev);
+      if (next.has(nodeId)) {
+        next.delete(nodeId);
+      } else {
+        next.add(nodeId);
+      }
+      return next;
+    });
+  };
+
   const createActor = async (name: string, position: { x: number; y: number }) => {
     try {
       const keyPair = await client.generateKeyPair(name);
       setActorKeys(prev => ({
         ...prev,
-        [name]: { publicKey: keyPair.publicKey, privateKey: keyPair.privateKey }
+        [name]: { 
+          publicKey: keyPair.publicKey, 
+          privateKey: keyPair.privateKey,
+          publicKeyJWK: keyPair.publicKeyJWK
+        }
       }));
 
       const newNode: Node = {
@@ -48,8 +65,15 @@ export default function NodeVisualization() {
         data: {
           label: name,
           ipnsCid: null,
+          ipfsCid: null,
           listeningTo: null,
           onRefresh: () => handleRefreshNode(name),
+          expanded: false,
+          onToggleExpand: () => toggleNodeExpanded(name),
+          decryptedData: null,
+          publicKeyJWK: keyPair.publicKeyJWK,
+          keyring: [],
+          metadata: {},
         },
       };
 
@@ -61,8 +85,46 @@ export default function NodeVisualization() {
   };
 
   const handleRefreshNode = async (nodeName: string) => {
-    // This will be called when a node refreshes its data
-    console.log(`Node ${nodeName} is refreshing...`);
+    console.info(`Node ${nodeName} is refreshing...`);
+    const keyPair = actorKeys[nodeName];
+    if (!keyPair) return;
+
+    try {
+      const metadata = await client.getMetadata(`${nodeName}-data`);
+      if (!metadata) return;
+
+      const decryptedData = await client.readData(
+        `${nodeName}-data`,
+        nodeName,
+        keyPair.privateKey
+      );
+
+      const recipients = await client.listRecipients(`${nodeName}-data`);
+
+      setNodes((nds) =>
+        nds.map((node) =>
+          node.id === nodeName
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  decryptedData,
+                  ipfsCid: metadata.ipnsName || null,
+                  metadata: {
+                    createdAt: metadata.createdAt,
+                    updatedAt: metadata.updatedAt,
+                    version: metadata.ipnsVersion,
+                  },
+                  keyring: recipients.map(name => ({ name })),
+                  publicKeyJWK: keyPair.publicKeyJWK,
+                },
+              }
+            : node
+        )
+      );
+    } catch (error) {
+      console.log(`Node ${nodeName} couldn't read data:`, error);
+    }
   };
 
   const writeDataToNode = async (nodeName: string, data: object) => {
@@ -98,6 +160,9 @@ export default function NodeVisualization() {
           )
         );
       }
+
+      // Trigger refresh to update all data
+      await handleRefreshNode(nodeName);
 
       toast.success(`Data written by ${nodeName}`);
     } catch (error) {
@@ -148,6 +213,10 @@ export default function NodeVisualization() {
             : node
         )
       );
+
+      // Refresh both nodes to update their data
+      await handleRefreshNode(fromNode);
+      await handleRefreshNode(toNode);
 
       toast.success(`Access granted from ${fromNode} to ${toNode}`);
     } catch (error) {
@@ -205,7 +274,14 @@ export default function NodeVisualization() {
 
         <div className="h-[600px] border rounded-lg bg-background">
           <ReactFlow
-            nodes={nodes}
+            nodes={nodes.map(node => ({
+              ...node,
+              data: {
+                ...node.data,
+                expanded: expandedNodes.has(node.id),
+                onToggleExpand: () => toggleNodeExpanded(node.id),
+              }
+            }))}
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
