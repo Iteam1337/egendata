@@ -482,4 +482,17 @@ export class EgendataClient {
   async deleteData(dataId: string): Promise<void> {
     await this.storage.delete(dataId);
   }
+
+  /**
+   * Get IPFS node ID (peer ID)
+   */
+  async getIPFSId(): Promise<string> {
+    if (this.storage instanceof IPFSStorage) {
+      const node = (this.storage as any).node;
+      if (node && node.libp2p && node.libp2p.peerId) {
+        return node.libp2p.peerId.toString();
+      }
+    }
+    return 'Not using IPFS storage';
+  }
 }

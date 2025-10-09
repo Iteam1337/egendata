@@ -2,12 +2,21 @@ import { memo, useState, useEffect } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Activity, Database, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
+import { Activity, Database, ChevronDown, ChevronUp, Copy, Check, QrCode, ClipboardPaste } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 export interface DataFlowNodeData {
   label: string;
@@ -25,11 +34,16 @@ export interface DataFlowNodeData {
     updatedAt?: number;
     version?: number;
   };
+  ipfsId?: string;
+  onCopyKey?: () => void;
+  onPasteKey?: (publicKeyJWK: string) => void;
 }
 
 export const DataFlowNode = memo(({ data }: NodeProps<DataFlowNodeData>) => {
   const [isReading, setIsReading] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [pasteDialogOpen, setPasteDialogOpen] = useState(false);
+  const [pastedKey, setPastedKey] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -57,6 +71,37 @@ export const DataFlowNode = memo(({ data }: NodeProps<DataFlowNodeData>) => {
     return new Date(timestamp).toLocaleString('sv-SE');
   };
 
+  const handleCopyKey = () => {
+    if (data.publicKeyJWK) {
+      const keyString = JSON.stringify(data.publicKeyJWK);
+      copyToClipboard(keyString, 'Public Key');
+      if (data.onCopyKey) {
+        data.onCopyKey();
+      }
+    }
+  };
+
+  const handlePasteKey = () => {
+    try {
+      const parsed = JSON.parse(pastedKey);
+      if (data.onPasteKey) {
+        data.onPasteKey(pastedKey);
+        setPasteDialogOpen(false);
+        setPastedKey('');
+        toast({
+          title: "Nyckel inklistrad!",
+          description: "Koppling skapas automatiskt mellan noderna",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Fel",
+        description: "Ogiltig nyckel. Kontrollera formatet.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className={`relative transition-all duration-300 ${isReading ? 'scale-105' : ''}`}>
       <Handle
@@ -77,6 +122,42 @@ export const DataFlowNode = memo(({ data }: NodeProps<DataFlowNodeData>) => {
               {isReading && (
                 <Activity className="h-4 w-4 text-primary animate-pulse" />
               )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopyKey}
+                className="h-6 w-6 p-0"
+                title="Kopiera nyckel"
+              >
+                <QrCode className="h-4 w-4" />
+              </Button>
+              <Dialog open={pasteDialogOpen} onOpenChange={setPasteDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    title="Klistra in nyckel"
+                  >
+                    <ClipboardPaste className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Klistra in Public Key</DialogTitle>
+                    <DialogDescription>
+                      Klistra in en public key för att automatiskt skapa en koppling till den noden.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Textarea
+                    placeholder="Klistra in JWK public key här..."
+                    value={pastedKey}
+                    onChange={(e) => setPastedKey(e.target.value)}
+                    className="min-h-[200px] font-mono text-xs"
+                  />
+                  <Button onClick={handlePasteKey}>Skapa koppling</Button>
+                </DialogContent>
+              </Dialog>
               <Button
                 variant="ghost"
                 size="sm"
@@ -144,11 +225,33 @@ export const DataFlowNode = memo(({ data }: NodeProps<DataFlowNodeData>) => {
           {data.expanded && (
             <ScrollArea className="max-h-[400px]">
               <div className="space-y-3 pt-2">
+                {data.ipfsId && (
+                  <>
+                    <Separator />
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold">🆔 IPFS Node ID</p>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="font-mono text-xs flex-1 truncate">
+                          {data.ipfsId}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyToClipboard(data.ipfsId!, 'IPFS ID')}
+                          className="h-6 w-6 p-0"
+                        >
+                          {copiedField === 'IPFS ID' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 {data.decryptedData && (
                   <>
                     <Separator />
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold">📦 Decrypted Data</p>
+                      <p className="text-xs font-semibold">📦 Data (Klartext)</p>
                       <pre className="bg-muted p-2 rounded text-xs overflow-auto">
                         {JSON.stringify(data.decryptedData, null, 2)}
                       </pre>

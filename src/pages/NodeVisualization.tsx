@@ -28,6 +28,19 @@ export default function NodeVisualization() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [actorKeys, setActorKeys] = useState<Record<string, { publicKey: CryptoKey; privateKey: CryptoKey; publicKeyJWK: any }>>({});
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [ipfsId, setIpfsId] = useState<string>('');
+
+  useEffect(() => {
+    const initIPFS = async () => {
+      try {
+        const peerId = await client.getIPFSId();
+        setIpfsId(peerId);
+      } catch (error) {
+        console.error('Failed to get IPFS ID:', error);
+      }
+    };
+    initIPFS();
+  }, [client]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -74,6 +87,9 @@ export default function NodeVisualization() {
           publicKeyJWK: keyPair.publicKeyJWK,
           keyring: [],
           metadata: {},
+          ipfsId,
+          onCopyKey: () => handleCopyKey(name),
+          onPasteKey: (pastedKeyJWK: string) => handlePasteKey(name, pastedKeyJWK),
         },
       };
 
@@ -224,6 +240,34 @@ export default function NodeVisualization() {
     }
   };
 
+  const handleCopyKey = (nodeName: string) => {
+    // Already handled in DataFlowNode component
+    console.log(`Copy key for ${nodeName}`);
+  };
+
+  const handlePasteKey = async (toNodeName: string, pastedKeyJWK: string) => {
+    try {
+      const publicKeyJWK = JSON.parse(pastedKeyJWK);
+      
+      // Find which node this key belongs to
+      const fromNodeEntry = Object.entries(actorKeys).find(([_, keys]) => 
+        JSON.stringify(keys.publicKeyJWK) === pastedKeyJWK
+      );
+
+      if (!fromNodeEntry) {
+        toast.error('Kunde inte hitta noden för denna nyckel');
+        return;
+      }
+
+      const [fromNodeName] = fromNodeEntry;
+      
+      // Grant access from the found node to this node
+      await grantAccess(fromNodeName, toNodeName);
+    } catch (error) {
+      toast.error(`Failed to create connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header onOpenExplorer={() => window.location.href = '/'} />
@@ -280,6 +324,9 @@ export default function NodeVisualization() {
                 ...node.data,
                 expanded: expandedNodes.has(node.id),
                 onToggleExpand: () => toggleNodeExpanded(node.id),
+                ipfsId,
+                onCopyKey: () => handleCopyKey(node.id),
+                onPasteKey: (pastedKeyJWK: string) => handlePasteKey(node.id, pastedKeyJWK),
               }
             }))}
             edges={edges}
