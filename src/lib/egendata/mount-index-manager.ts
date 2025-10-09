@@ -1,9 +1,14 @@
-import { MountIndex, MountEntry } from './types';
+import { MountIndex, MountEntry, StorageAdapter } from './types';
 
 /**
  * Manages Mount Index for Path Composition pattern
  */
 export class MountIndexManager {
+  private storage?: StorageAdapter;
+
+  constructor(storage?: StorageAdapter) {
+    this.storage = storage;
+  }
   /**
    * Create a new Mount Index
    */
@@ -84,5 +89,40 @@ export class MountIndexManager {
     if (new Set(paths).size !== paths.length) return false;
 
     return true;
+  }
+
+  /**
+   * Publish Mount Index to storage and return CID
+   */
+  async publishMountIndex(mountIndex: MountIndex): Promise<string> {
+    if (!this.storage) {
+      throw new Error('StorageAdapter not configured');
+    }
+
+    if (!this.validate(mountIndex)) {
+      throw new Error('Invalid MountIndex structure');
+    }
+
+    // Store as pseudo-StoredData structure
+    const key = `mount-index-${Date.now()}`;
+    const pseudoStoredData = {
+      encryptedData: JSON.stringify(mountIndex),
+      keystone: { encryptedKey: '', recipients: [] },
+      metadata: {
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        owner: 'system'
+      }
+    };
+
+    await this.storage.set(key, pseudoStoredData);
+
+    // Return CID if storage adapter supports it
+    if ('getCID' in this.storage && typeof this.storage.getCID === 'function') {
+      const cid = (this.storage as any).getCID(key);
+      if (cid) return cid;
+    }
+
+    return key;
   }
 }

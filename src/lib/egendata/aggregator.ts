@@ -1,5 +1,6 @@
-import { AggregationKeystone, AuthorizedServices, ServiceKeystone } from './types';
+import { AggregationKeystone, AuthorizedServices, ServiceKeystone, MountIndex } from './types';
 import { IPFSStorage } from './ipfs-storage';
+import { MountIndexManager } from './mount-index-manager';
 import * as jose from 'jose';
 
 /**
@@ -10,10 +11,12 @@ export class Aggregator {
   private authorizedServicesCid: string;
   private version: number = 0;
   private resolutionTimeout: number = 30000; // 30 seconds
+  private mountIndexManager?: MountIndexManager;
 
-  constructor(storage: IPFSStorage, authorizedServicesCid: string) {
+  constructor(storage: IPFSStorage, authorizedServicesCid: string, mountIndexManager?: MountIndexManager) {
     this.storage = storage;
     this.authorizedServicesCid = authorizedServicesCid;
+    this.mountIndexManager = mountIndexManager;
   }
 
   /**
@@ -27,7 +30,8 @@ export class Aggregator {
    * Aggregate all Service Keystones into Aggregation Keystone
    */
   async aggregate(
-    recipients: { name: string; publicKey: CryptoKey }[]
+    recipients: { name: string; publicKey: CryptoKey }[],
+    mountIndex?: MountIndex
   ): Promise<{ keystone: AggregationKeystone; cid: string }> {
     console.log('🔄 Starting aggregation...');
 
@@ -100,6 +104,17 @@ export class Aggregator {
 
     this.version++;
 
+    // Publish MountIndex if provided
+    let mountIndexCid: string | undefined;
+    if (mountIndex && this.mountIndexManager) {
+      try {
+        mountIndexCid = await this.mountIndexManager.publishMountIndex(mountIndex);
+        console.log(`📍 MountIndex published: ${mountIndexCid}`);
+      } catch (error) {
+        console.warn('⚠️ Failed to publish MountIndex:', error);
+      }
+    }
+
     const aggregationKeystone: AggregationKeystone = {
       type: 'egendata.keystone.aggregation',
       schema: '1.0',
@@ -112,7 +127,8 @@ export class Aggregator {
           authorizedServicesCid: this.authorizedServicesCid,
           servicesIncluded,
           missingServices
-        }
+        },
+        mountIndexCid
       }
     };
 
