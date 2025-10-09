@@ -4,7 +4,7 @@ import { InMemoryStorage } from './storage';
 import { IPFSStorage } from './ipfs-storage';
 
 export class EgendataClient {
-  private storage: StorageAdapter;
+  public storage: StorageAdapter;
   private keyPairs: Map<string, KeyPair> = new Map();
 
   constructor(storage?: StorageAdapter) {
@@ -44,14 +44,14 @@ export class EgendataClient {
 
   /**
    * Write encrypted data to storage
-   * Returns object with encrypted data string and CID (if using IPFS)
+   * Returns object with encrypted data string, CID and IPNS name (if using IPFS)
    */
   async writeData(
     dataId: string,
     data: object,
     owner: string,
     recipients: { name: string; publicKey: CryptoKey }[]
-  ): Promise<{ encryptedData: string; cid?: string }> {
+  ): Promise<{ encryptedData: string; cid?: string; ipnsName?: string }> {
     // Generate a symmetric Data Encryption Key (DEK)
     const dek = await crypto.subtle.generateKey(
       { name: 'AES-GCM', length: 256 },
@@ -110,13 +110,32 @@ export class EgendataClient {
 
     await this.storage.set(dataId, storedData);
     
-    // Hämta CID om det är IPFS storage
+    // Hämta CID och publicera till IPNS om det är IPFS storage
     let cid: string | undefined;
+    let ipnsName: string | undefined;
     if (this.storage instanceof IPFSStorage) {
       cid = this.storage.getCID(dataId) || undefined;
+      
+      // Skapa IPNS-nyckel om den inte finns och publicera
+      if (cid) {
+        try {
+          // Försök skapa IPNS-nyckel (ignorera om den redan finns)
+          try {
+            await this.storage.createIPNSKey(dataId);
+          } catch (e) {
+            // Nyckeln finns redan, fortsätt
+          }
+          
+          // Publicera till IPNS
+          ipnsName = await this.storage.publishToIPNS(cid, dataId);
+          console.log(`✅ Published to IPNS: ${ipnsName}`);
+        } catch (error) {
+          console.warn('⚠️ Could not publish to IPNS:', error);
+        }
+      }
     }
     
-    return { encryptedData, cid };
+    return { encryptedData, cid, ipnsName };
   }
 
   /**
@@ -392,7 +411,7 @@ export class EgendataClient {
   /**
    * Update the plaintext data (re-encrypts with same recipients)
    */
-  async updateData(dataId: string, newData: object, ownerName: string): Promise<{ encryptedData: string; cid?: string }> {
+  async updateData(dataId: string, newData: object, ownerName: string): Promise<{ encryptedData: string; cid?: string; ipnsName?: string }> {
     const storedData = await this.storage.get(dataId);
     if (!storedData) {
       throw new Error(`Data not found: ${dataId}`);
@@ -467,13 +486,24 @@ export class EgendataClient {
 
     await this.storage.set(dataId, updatedStoredData);
 
-    // Get CID if using IPFS storage
+    // Get CID and publish to IPNS if using IPFS storage
     let cid: string | undefined;
+    let ipnsName: string | undefined;
     if (this.storage instanceof IPFSStorage) {
       cid = this.storage.getCID(dataId) || undefined;
+      
+      // Publish updated CID to IPNS
+      if (cid) {
+        try {
+          ipnsName = await this.storage.publishToIPNS(cid, dataId);
+          console.log(`✅ Updated IPNS: ${ipnsName}`);
+        } catch (error) {
+          console.warn('⚠️ Could not update IPNS:', error);
+        }
+      }
     }
 
-    return { encryptedData: newEncryptedData, cid };
+    return { encryptedData: newEncryptedData, cid, ipnsName };
   }
 
   /**

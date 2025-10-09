@@ -14,7 +14,7 @@ import 'reactflow/dist/style.css';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { EgendataClient } from '@/lib/egendata';
+import { EgendataClient, IPFSStorage } from '@/lib/egendata';
 import { toast } from 'sonner';
 import { DataFlowNode } from '@/components/DataFlowNode';
 
@@ -125,11 +125,15 @@ export default function NodeVisualization() {
                 data: {
                   ...node.data,
                   decryptedData,
-                  ipfsCid: metadata.ipnsName || null,
+                  ipnsCid: metadata.ipnsName || null,
+                  ipfsCid: (client.storage instanceof IPFSStorage) 
+                    ? client.storage.getCID(`${nodeName}-data`) 
+                    : null,
                   metadata: {
                     createdAt: metadata.createdAt,
                     updatedAt: metadata.updatedAt,
                     version: metadata.ipnsVersion,
+                    ipnsName: metadata.ipnsName,
                   },
                   keyring: recipients.map(name => ({ name })),
                   publicKeyJWK: keyPair.publicKeyJWK,
@@ -166,12 +170,19 @@ export default function NodeVisualization() {
         recipients
       );
 
-      // Update node with IPNS CID if available
-      if (result.cid) {
+      // Update node with IPNS name and IPFS CID if available
+      if (result.ipnsName || result.cid) {
         setNodes((nds) =>
           nds.map((node) =>
             node.id === nodeName
-              ? { ...node, data: { ...node.data, ipnsCid: result.cid } }
+              ? { 
+                  ...node, 
+                  data: { 
+                    ...node.data, 
+                    ipnsCid: result.ipnsName || result.cid,
+                    ipfsCid: result.cid 
+                  } 
+                }
               : node
           )
         );
