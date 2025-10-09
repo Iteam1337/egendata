@@ -1304,15 +1304,17 @@ const Index = () => {
                         <li>• Alice controls which services can write - instant revocation possible</li>
                       </ul>
                     </div>
-
-                    {writeNodeUpdateCount > 0 && (
-                      <Button onClick={() => setStep(5)} size="lg" className="w-full">
-                        Continue to Re-grant Access <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    )}
                   </div>
                 )}
               </Card>
+
+              {writeNodeUpdateCount > 0 && (
+                <div className="flex justify-end">
+                  <Button onClick={() => setStep(5)} size="lg">
+                    Continue to Re-grant Access <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              )}
 
               {/* Concept explainers */}
               <div className="space-y-4">
