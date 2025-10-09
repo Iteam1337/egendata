@@ -1469,6 +1469,12 @@ const Index = () => {
                 </div>
               </Card>
 
+              <div className="flex justify-end">
+                <Button onClick={() => setStep(6)} size="lg">
+                  Finish Demo <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+
               {/* Concept explainers at bottom for mobile */}
               <div className="space-y-4 mt-8">
                 <ConceptExplainer title="Peer-to-Peer Key Exchange" icon={<QrCode className="w-4 h-4" />}>
@@ -1525,12 +1531,6 @@ const Index = () => {
                     This interactive keyring demonstrates how access control is completely in Alice's hands.
                   </p>
                 </ConceptExplainer>
-
-                <div className="mt-6">
-                  <Button onClick={() => setStep(6)} size="lg" className="w-full">
-                    Finish Demo <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
               </div>
             </div>
           )}
