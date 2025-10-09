@@ -14,7 +14,7 @@ import { ConceptExplainer } from "@/components/ConceptExplainer";
 import { Footer } from "@/components/Footer";
 import { ExplorePanel } from "@/components/ExplorePanel";
 import { Header } from "@/components/Header";
-import { EgendataClient, IPFSStorage, type KeyPair } from "@/lib/egendata";
+import { EgendataClient, IPFSStorage, WriteNode, type KeyPair } from "@/lib/egendata";
 import { encodeKeyForQR, decodeKeyFromQR, validateKeyData, qrKeyDataToJWK } from "@/lib/qr-key-exchange";
 import {
   ArrowRight,
@@ -29,6 +29,8 @@ import {
   Database,
   Shield,
   Lightbulb,
+  Network,
+  Activity,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { KeyRingDisplay } from "@/components/KeyRingDisplay";
@@ -89,8 +91,15 @@ const Index = () => {
   const [explorePanelOpen, setExplorePanelOpen] = useState(false);
   const [selectedActorForExplore, setSelectedActorForExplore] = useState<string | null>(null);
 
+  // Write Node state
+  const [writeNode, setWriteNode] = useState<WriteNode | null>(null);
+  const [writeNodeRunning, setWriteNodeRunning] = useState(false);
+  const [writeNodeUpdateCount, setWriteNodeUpdateCount] = useState(0);
+  const [writeNodeLastUpdate, setWriteNodeLastUpdate] = useState<Date | null>(null);
+  const writeNodeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const DATA_ID = "alice-sensitive-data";
-  const steps = ["Alice's Data", "Share with Bob", "Share with Charlie", "Revoke Bob", "Re-grant via QR"];
+  const steps = ["Alice's Data", "Share with Bob", "Share with Charlie", "Revoke Bob", "Re-grant via QR", "Write Nodes"];
 
   const getAccessListNames = async () => {
     try {
@@ -323,6 +332,99 @@ const Index = () => {
       });
     }
   };
+
+  // Write Node handlers
+  const handleCreateWriteNode = async () => {
+    if (!alice || !ipfsReady) return;
+
+    try {
+      const node = new WriteNode('svc:fitness:demo', 'egendata.app', ipfsStorage);
+      await node.generateIPNSKey();
+      setWriteNode(node);
+      setStep(5);
+
+      toast({
+        title: "Write Node created!",
+        description: "External service can now publish data to Alice's egendata",
+      });
+    } catch (error) {
+      console.error('Write Node creation failed:', error);
+      toast({
+        title: "Error",
+        description: "Could not create Write Node",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStartWriteNode = async () => {
+    if (!writeNode || !alice || writeNodeRunning) return;
+
+    setWriteNodeRunning(true);
+    
+    // Publish immediately
+    await publishWriteNodeData();
+
+    // Start interval (every 10 seconds)
+    const interval = setInterval(async () => {
+      await publishWriteNodeData();
+    }, 10000);
+    
+    writeNodeIntervalRef.current = interval;
+
+    toast({
+      title: "Write Node started!",
+      description: "Publishing fitness data every 10 seconds",
+    });
+  };
+
+  const handleStopWriteNode = () => {
+    if (writeNodeIntervalRef.current) {
+      clearInterval(writeNodeIntervalRef.current);
+      writeNodeIntervalRef.current = null;
+    }
+    setWriteNodeRunning(false);
+
+    toast({
+      title: "Write Node stopped",
+      description: "No longer publishing data",
+    });
+  };
+
+  const publishWriteNodeData = async () => {
+    if (!writeNode || !alice) return;
+
+    try {
+      const mockFitnessData = {
+        type: 'activity',
+        distance: Math.floor(Math.random() * 10000),
+        calories: Math.floor(Math.random() * 500),
+        duration: Math.floor(Math.random() * 3600),
+        timestamp: new Date().toISOString()
+      };
+
+      await writeNode.publishServiceKeystone(
+        mockFitnessData,
+        [{ name: 'Alice', publicKey: alice.publicKey }]
+      );
+
+      setWriteNodeUpdateCount(prev => prev + 1);
+      setWriteNodeLastUpdate(new Date());
+
+      console.log('✅ Write Node published:', mockFitnessData);
+    } catch (error) {
+      console.error('❌ Write Node publish failed:', error);
+    }
+  };
+
+  // Cleanup Write Node interval on unmount
+  useEffect(() => {
+    return () => {
+      if (writeNodeIntervalRef.current) {
+        clearInterval(writeNodeIntervalRef.current);
+      }
+    };
+  }, []);
 
   const handleGenerateBobQR = () => {
     if (!bob) return;
@@ -1298,12 +1400,144 @@ const Index = () => {
                     This interactive keyring demonstrates how access control is completely in Alice's hands.
                   </p>
                 </ConceptExplainer>
+
+                <div className="mt-6">
+                  <Button onClick={() => setStep(5)} size="lg" className="w-full">
+                    Continue to Write Nodes <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Step 5: Completed - Free experimentation */}
+          {/* Step 5: Write Nodes */}
           {step === 5 && (
+            <div className="animate-fade-in space-y-8">
+              <Card className="p-6 bg-muted/30">
+                <h3 className="font-semibold text-lg mb-4">Step 5: External Service Publishing</h3>
+                <p className="text-muted-foreground mb-6">
+                  Alice wants a fitness tracking service to automatically publish activity data to her egendata. 
+                  Using Write Nodes, the service can publish without accessing Alice's root keys.
+                </p>
+
+                {!writeNode ? (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                      <h4 className="font-semibold mb-2 flex items-center gap-2">
+                        <Network className="w-4 h-4 text-primary" />
+                        About Write Nodes
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Write Nodes enable external services to publish encrypted data directly to your IPFS storage 
+                        without ever having access to your root IPNS key. Each service maintains its own IPNS identity.
+                      </p>
+                    </div>
+
+                    <Button onClick={handleCreateWriteNode} size="lg" className="w-full">
+                      <Network className="w-4 h-4 mr-2" />
+                      Create Fitness Tracking Write Node
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <Card className="p-4 bg-muted/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Network className="w-5 h-5 text-primary" />
+                          <h4 className="font-semibold">Fitness Tracker Service</h4>
+                        </div>
+                        {writeNodeRunning && (
+                          <span className="flex items-center gap-1 text-sm text-success animate-pulse">
+                            <Activity className="w-4 h-4" />
+                            Running
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2 text-sm text-muted-foreground mb-4">
+                        <p>Service ID: <code className="text-xs bg-background px-1 py-0.5 rounded">svc:fitness:demo</code></p>
+                        <p>Domain: <code className="text-xs bg-background px-1 py-0.5 rounded">egendata.app</code></p>
+                        <p>Updates published: <strong>{writeNodeUpdateCount}</strong></p>
+                        {writeNodeLastUpdate && (
+                          <p>Last update: <strong>{writeNodeLastUpdate.toLocaleTimeString()}</strong></p>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2">
+                        {!writeNodeRunning ? (
+                          <Button onClick={handleStartWriteNode} variant="default" className="flex-1">
+                            <Activity className="w-4 h-4 mr-2" />
+                            Start Publishing
+                          </Button>
+                        ) : (
+                          <Button onClick={handleStopWriteNode} variant="outline" className="flex-1">
+                            Stop Publishing
+                          </Button>
+                        )}
+                      </div>
+                    </Card>
+
+                    <div className="p-4 bg-success/10 border border-success/20 rounded-lg">
+                      <p className="text-sm font-semibold mb-2 flex items-center gap-2">
+                        <Check className="w-4 h-4" />
+                        How It Works
+                      </p>
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        <li>• Service generates its own IPNS keypair</li>
+                        <li>• Alice adds service to her Authorized Services list</li>
+                        <li>• Service publishes Service Keystones to its IPNS</li>
+                        <li>• Alice aggregates all services into her root keystone</li>
+                        <li>• Alice controls which services can write - instant revocation possible</li>
+                      </ul>
+                    </div>
+
+                    {writeNodeUpdateCount > 0 && (
+                      <Button onClick={() => setStep(6)} size="lg" className="w-full">
+                        Continue to Finish <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </Card>
+
+              {/* Concept explainers */}
+              <div className="space-y-4">
+                <ConceptExplainer title="Write Nodes Architecture" icon={<Network className="w-4 h-4" />}>
+                  <p className="mb-2">Write Nodes solve the challenge of allowing external services to contribute data without compromising security:</p>
+                  <ul className="list-disc pl-5 mt-2 space-y-1">
+                    <li><strong>Service Independence:</strong> Each service has its own IPNS keypair</li>
+                    <li><strong>No Root Access:</strong> Services never touch your root IPNS private key</li>
+                    <li><strong>Authorized Services Registry:</strong> You control which services can publish</li>
+                    <li><strong>Aggregation:</strong> All service data is aggregated into your root keystone</li>
+                    <li><strong>Revocation:</strong> Remove services from your registry anytime</li>
+                  </ul>
+                </ConceptExplainer>
+
+                <ConceptExplainer title="Service Keystone Format" icon={<Key className="w-4 h-4" />}>
+                  <p>Each Write Node publishes Service Keystones with this structure:</p>
+                  <div className="mt-2 p-3 bg-muted rounded-md font-mono text-xs overflow-x-auto">
+{`{
+  type: "egendata.keystone.service",
+  schema: "1.0",
+  domain: "egendata.app",
+  keyring: [
+    { name: "Alice", wrappedKey: "..." }
+  ],
+  payload: "encrypted_fitness_data",
+  metadata: {
+    version: 1,
+    producer: "svc:fitness:demo",
+    created: "2024-01-15T10:30:00Z"
+  }
+}`}
+                  </div>
+                </ConceptExplainer>
+              </div>
+            </div>
+          )}
+
+          {/* Step 6: Completed - Free experimentation */}
+          {step === 6 && (
             <div className="animate-fade-in space-y-8">
               <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
                 <div className="flex items-center gap-3 mb-4">
