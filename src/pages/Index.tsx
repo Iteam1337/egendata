@@ -338,7 +338,6 @@ const Index = () => {
       const node = new WriteNode('svc:fitness:demo', 'egendata.app', ipfsStorage);
       await node.generateIPNSKey();
       setWriteNode(node);
-      setStep(5);
 
       toast({
         title: "Write Node created!",
