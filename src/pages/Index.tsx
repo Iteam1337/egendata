@@ -645,7 +645,11 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <Header onOpenExplorer={() => setExplorePanelOpen(true)} />
+      <Header 
+        onOpenExplorer={() => setExplorePanelOpen(true)}
+        onRestartDemo={() => setStep(0)}
+        showRestartButton={step > 0}
+      />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
