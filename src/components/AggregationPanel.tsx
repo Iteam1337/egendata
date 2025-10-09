@@ -117,11 +117,11 @@ export const AggregationPanel = ({ onAggregate, lastAggregation, isAggregating }
             </p>
           </Card>
 
-          {lastAggregation.metadata.mountIndexCid && (
+          {lastAggregation.metadata.mountsCid && (
             <Card className="p-3 bg-muted/30">
-              <p className="text-xs font-medium mb-1">Mount Index CID</p>
+              <p className="text-xs font-medium mb-1">Mounts CID</p>
               <p className="text-xs font-mono break-all text-muted-foreground">
-                {lastAggregation.metadata.mountIndexCid}
+                {lastAggregation.metadata.mountsCid}
               </p>
             </Card>
           )}

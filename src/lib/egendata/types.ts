@@ -84,7 +84,7 @@ export interface AggregationMetadata {
   version: number;
   created: string;
   aggregation: AggregationInfo;
-  mountIndexCid?: string;
+  mountsCid?: string;
 }
 
 export interface AggregationKeystone {
@@ -103,8 +103,8 @@ export interface MountEntry {
   target: string;
 }
 
-export interface MountIndex {
-  type: 'egendata.mountIndex';
+export interface Mounts {
+  type: 'egendata.mounts';
   schema: string;
   mounts: MountEntry[];
 }

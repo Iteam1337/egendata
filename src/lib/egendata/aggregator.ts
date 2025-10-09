@@ -1,6 +1,6 @@
-import { AggregationKeystone, AuthorizedServices, ServiceKeystone, MountIndex } from './types';
+import { AggregationKeystone, AuthorizedServices, ServiceKeystone, Mounts } from './types';
 import { IPFSStorage } from './ipfs-storage';
-import { MountIndexManager } from './mount-index-manager';
+import { MountsManager } from './mounts-manager';
 import * as jose from 'jose';
 
 /**
@@ -11,12 +11,12 @@ export class Aggregator {
   private authorizedServicesCid: string;
   private version: number = 0;
   private resolutionTimeout: number = 30000; // 30 seconds
-  private mountIndexManager?: MountIndexManager;
+  private mountsManager?: MountsManager;
 
-  constructor(storage: IPFSStorage, authorizedServicesCid: string, mountIndexManager?: MountIndexManager) {
+  constructor(storage: IPFSStorage, authorizedServicesCid: string, mountsManager?: MountsManager) {
     this.storage = storage;
     this.authorizedServicesCid = authorizedServicesCid;
-    this.mountIndexManager = mountIndexManager;
+    this.mountsManager = mountsManager;
   }
 
   /**
@@ -31,7 +31,7 @@ export class Aggregator {
    */
   async aggregate(
     recipients: { name: string; publicKey: CryptoKey }[],
-    mountIndex?: MountIndex
+    mounts?: Mounts
   ): Promise<{ keystone: AggregationKeystone; cid: string }> {
     console.log('🔄 Starting aggregation...');
 
@@ -104,14 +104,14 @@ export class Aggregator {
 
     this.version++;
 
-    // Publish MountIndex if provided
-    let mountIndexCid: string | undefined;
-    if (mountIndex && this.mountIndexManager) {
+    // Publish Mounts if provided
+    let mountsCid: string | undefined;
+    if (mounts && this.mountsManager) {
       try {
-        mountIndexCid = await this.mountIndexManager.publishMountIndex(mountIndex);
-        console.log(`📍 MountIndex published: ${mountIndexCid}`);
+        mountsCid = await this.mountsManager.publishMounts(mounts);
+        console.log(`📍 Mounts published: ${mountsCid}`);
       } catch (error) {
-        console.warn('⚠️ Failed to publish MountIndex:', error);
+        console.warn('⚠️ Failed to publish Mounts:', error);
       }
     }
 
@@ -128,7 +128,7 @@ export class Aggregator {
           servicesIncluded,
           missingServices
         },
-        mountIndexCid
+        mountsCid
       }
     };
 

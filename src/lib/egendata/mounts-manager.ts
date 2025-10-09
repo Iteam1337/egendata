@@ -1,73 +1,73 @@
-import { MountIndex, MountEntry, StorageAdapter } from './types';
+import { Mounts, MountEntry, StorageAdapter } from './types';
 
 /**
- * Manages Mount Index for Path Composition pattern
+ * Manages Mounts for Path Composition pattern
  */
-export class MountIndexManager {
+export class MountsManager {
   private storage?: StorageAdapter;
 
   constructor(storage?: StorageAdapter) {
     this.storage = storage;
   }
   /**
-   * Create a new Mount Index
+   * Create a new Mounts registry
    */
-  createMountIndex(): MountIndex {
+  createMounts(): Mounts {
     return {
-      type: 'egendata.mountIndex',
+      type: 'egendata.mounts',
       schema: '1.0',
       mounts: []
     };
   }
 
   /**
-   * Add a mount to the index (returns new immutable version)
+   * Add a mount to the registry (returns new immutable version)
    */
-  addMount(mountIndex: MountIndex, path: string, targetIPNS: string): MountIndex {
+  addMount(mounts: Mounts, path: string, targetIPNS: string): Mounts {
     // Ensure path starts with /
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     
     return {
-      ...mountIndex,
+      ...mounts,
       mounts: [
-        ...mountIndex.mounts.filter(m => m.path !== normalizedPath),
+        ...mounts.mounts.filter(m => m.path !== normalizedPath),
         { path: normalizedPath, target: targetIPNS }
       ]
     };
   }
 
   /**
-   * Remove a mount from the index (returns new immutable version)
+   * Remove a mount from the registry (returns new immutable version)
    */
-  removeMount(mountIndex: MountIndex, path: string): MountIndex {
+  removeMount(mounts: Mounts, path: string): Mounts {
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     
     return {
-      ...mountIndex,
-      mounts: mountIndex.mounts.filter(m => m.path !== normalizedPath)
+      ...mounts,
+      mounts: mounts.mounts.filter(m => m.path !== normalizedPath)
     };
   }
 
   /**
    * Get mount target for a given path
    */
-  getMount(mountIndex: MountIndex, path: string): string | null {
+  getMount(mounts: Mounts, path: string): string | null {
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    const mount = mountIndex.mounts.find(m => m.path === normalizedPath);
+    const mount = mounts.mounts.find(m => m.path === normalizedPath);
     return mount?.target || null;
   }
 
   /**
    * Resolve a path to its target IPNS
    */
-  resolvePath(mountIndex: MountIndex, path: string): string | null {
+  resolvePath(mounts: Mounts, path: string): string | null {
     // Find longest matching mount
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     
     let bestMatch: MountEntry | null = null;
     let bestMatchLength = 0;
 
-    for (const mount of mountIndex.mounts) {
+    for (const mount of mounts.mounts) {
       if (normalizedPath.startsWith(mount.path) && mount.path.length > bestMatchLength) {
         bestMatch = mount;
         bestMatchLength = mount.path.length;
@@ -78,35 +78,35 @@ export class MountIndexManager {
   }
 
   /**
-   * Validate Mount Index structure
+   * Validate Mounts structure
    */
-  validate(mountIndex: MountIndex): boolean {
-    if (mountIndex.type !== 'egendata.mountIndex') return false;
-    if (!Array.isArray(mountIndex.mounts)) return false;
+  validate(mounts: Mounts): boolean {
+    if (mounts.type !== 'egendata.mounts') return false;
+    if (!Array.isArray(mounts.mounts)) return false;
 
     // Check for duplicate paths
-    const paths = mountIndex.mounts.map(m => m.path);
+    const paths = mounts.mounts.map(m => m.path);
     if (new Set(paths).size !== paths.length) return false;
 
     return true;
   }
 
   /**
-   * Publish Mount Index to storage and return CID
+   * Publish Mounts to storage and return CID
    */
-  async publishMountIndex(mountIndex: MountIndex): Promise<string> {
+  async publishMounts(mounts: Mounts): Promise<string> {
     if (!this.storage) {
       throw new Error('StorageAdapter not configured');
     }
 
-    if (!this.validate(mountIndex)) {
-      throw new Error('Invalid MountIndex structure');
+    if (!this.validate(mounts)) {
+      throw new Error('Invalid Mounts structure');
     }
 
     // Store as pseudo-StoredData structure
-    const key = `mount-index-${Date.now()}`;
+    const key = `mounts-${Date.now()}`;
     const pseudoStoredData = {
-      encryptedData: JSON.stringify(mountIndex),
+      encryptedData: JSON.stringify(mounts),
       keystone: { encryptedKey: '', recipients: [] },
       metadata: {
         createdAt: Date.now(),

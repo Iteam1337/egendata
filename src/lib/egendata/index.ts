@@ -4,7 +4,7 @@ export { IPFSStorage } from './ipfs-storage';
 export { WriteNode } from './write-node';
 export { Aggregator } from './aggregator';
 export { AuthorizedServicesManager } from './authorized-services-manager';
-export { MountIndexManager } from './mount-index-manager';
+export { MountsManager } from './mounts-manager';
 export type { 
   KeyPair, 
   Keystone, 
@@ -15,7 +15,7 @@ export type {
   ServicePolicy,
   ServiceKeystone,
   AggregationKeystone,
-  MountIndex,
+  Mounts,
   MountEntry,
   IPNSKey
 } from './types';
