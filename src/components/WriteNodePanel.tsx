@@ -4,15 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, ExternalLink, Network } from 'lucide-react';
-import { ScopeIndexManager, ServiceDefinition } from '@/lib/egendata';
+import { AuthorizedServicesManager, ServiceDefinition } from '@/lib/egendata';
 import { toast } from 'sonner';
 
 interface WriteNodePanelProps {
-  scopeIndexManager: ScopeIndexManager;
-  onScopeIndexUpdate?: (services: ServiceDefinition[]) => void;
+  authorizedServicesManager: AuthorizedServicesManager;
+  onAuthorizedServicesUpdate?: (services: ServiceDefinition[]) => void;
 }
 
-export const WriteNodePanel = ({ scopeIndexManager, onScopeIndexUpdate }: WriteNodePanelProps) => {
+export const WriteNodePanel = ({ authorizedServicesManager, onAuthorizedServicesUpdate }: WriteNodePanelProps) => {
   const [services, setServices] = useState<ServiceDefinition[]>([]);
   const [newServiceId, setNewServiceId] = useState('');
   const [newServiceIpns, setNewServiceIpns] = useState('');
@@ -32,7 +32,7 @@ export const WriteNodePanel = ({ scopeIndexManager, onScopeIndexUpdate }: WriteN
     };
 
     setServices([...services, service]);
-    onScopeIndexUpdate?.([...services, service]);
+    onAuthorizedServicesUpdate?.([...services, service]);
     
     setNewServiceId('');
     setNewServiceIpns('');
@@ -44,7 +44,7 @@ export const WriteNodePanel = ({ scopeIndexManager, onScopeIndexUpdate }: WriteN
   const handleRemoveService = (serviceId: string) => {
     const updated = services.filter(s => s.id !== serviceId);
     setServices(updated);
-    onScopeIndexUpdate?.(updated);
+    onAuthorizedServicesUpdate?.(updated);
     toast.success('Write Node removed');
   };
 

@@ -1,4 +1,4 @@
-import { AggregationKeystone, ScopeIndex, ServiceKeystone } from './types';
+import { AggregationKeystone, AuthorizedServices, ServiceKeystone } from './types';
 import { IPFSStorage } from './ipfs-storage';
 import * as jose from 'jose';
 
@@ -7,13 +7,13 @@ import * as jose from 'jose';
  */
 export class Aggregator {
   private storage: IPFSStorage;
-  private scopeIndexCid: string;
+  private authorizedServicesCid: string;
   private version: number = 0;
   private resolutionTimeout: number = 30000; // 30 seconds
 
-  constructor(storage: IPFSStorage, scopeIndexCid: string) {
+  constructor(storage: IPFSStorage, authorizedServicesCid: string) {
     this.storage = storage;
-    this.scopeIndexCid = scopeIndexCid;
+    this.authorizedServicesCid = authorizedServicesCid;
   }
 
   /**
@@ -31,24 +31,24 @@ export class Aggregator {
   ): Promise<{ keystone: AggregationKeystone; cid: string }> {
     console.log('🔄 Starting aggregation...');
 
-    // Fetch Scope Index
-    const scopeIndex = await this.fetchScopeIndex();
-    if (!scopeIndex) {
-      throw new Error('Failed to fetch Scope Index');
+    // Fetch Authorized Services
+    const authorizedServices = await this.fetchAuthorizedServices();
+    if (!authorizedServices) {
+      throw new Error('Failed to fetch Authorized Services');
     }
 
-    console.log(`📋 Scope Index loaded: ${scopeIndex.services.length} services`);
+    console.log(`📋 Authorized Services loaded: ${authorizedServices.services.length} services`);
 
     // Fetch all Service Keystones
     const serviceResults = await Promise.allSettled(
-      scopeIndex.services.map(service => this.fetchServiceKeystone(service.serviceIpns))
+      authorizedServices.services.map(service => this.fetchServiceKeystone(service.serviceIpns))
     );
 
     const servicesIncluded: string[] = [];
     const missingServices: string[] = [];
     const aggregatedData: Record<string, any> = {};
 
-    scopeIndex.services.forEach((service, index) => {
+    authorizedServices.services.forEach((service, index) => {
       const result = serviceResults[index];
       if (result.status === 'fulfilled' && result.value) {
         servicesIncluded.push(service.id);
@@ -109,7 +109,7 @@ export class Aggregator {
         version: this.version,
         created: new Date().toISOString(),
         aggregation: {
-          scopeIndexCid: this.scopeIndexCid,
+          authorizedServicesCid: this.authorizedServicesCid,
           servicesIncluded,
           missingServices
         }
@@ -131,14 +131,14 @@ export class Aggregator {
   }
 
   /**
-   * Fetch Scope Index from IPFS
+   * Fetch Authorized Services from IPFS
    */
-  private async fetchScopeIndex(): Promise<ScopeIndex | null> {
+  private async fetchAuthorizedServices(): Promise<AuthorizedServices | null> {
     try {
-      const data = await this.storage.getByCID(this.scopeIndexCid);
-      return data as unknown as ScopeIndex;
+      const data = await this.storage.getByCID(this.authorizedServicesCid);
+      return data as unknown as AuthorizedServices;
     } catch (error) {
-      console.error('❌ Error fetching Scope Index:', error);
+      console.error('❌ Error fetching Authorized Services:', error);
       return null;
     }
   }

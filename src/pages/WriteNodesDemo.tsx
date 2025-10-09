@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import {
   IPFSStorage,
   EgendataClient,
-  ScopeIndexManager,
+  AuthorizedServicesManager,
   Aggregator,
   ServiceDefinition,
   AggregationKeystone,
@@ -21,7 +21,7 @@ import { Network, Layers, Book } from 'lucide-react';
 export default function WriteNodesDemo() {
   const ipfsStorageRef = useRef<IPFSStorage>();
   const egendataRef = useRef<EgendataClient>();
-  const scopeIndexManagerRef = useRef<ScopeIndexManager>();
+  const authorizedServicesManagerRef = useRef<AuthorizedServicesManager>();
 
   if (!ipfsStorageRef.current) {
     ipfsStorageRef.current = new IPFSStorage();
@@ -29,13 +29,13 @@ export default function WriteNodesDemo() {
   if (!egendataRef.current) {
     egendataRef.current = new EgendataClient(ipfsStorageRef.current);
   }
-  if (!scopeIndexManagerRef.current) {
-    scopeIndexManagerRef.current = new ScopeIndexManager();
+  if (!authorizedServicesManagerRef.current) {
+    authorizedServicesManagerRef.current = new AuthorizedServicesManager();
   }
 
   const ipfsStorage = ipfsStorageRef.current;
   const egendata = egendataRef.current;
-  const scopeIndexManager = scopeIndexManagerRef.current;
+  const authorizedServicesManager = authorizedServicesManagerRef.current;
 
   const [ipfsReady, setIpfsReady] = useState(false);
   const [ipfsInitializing, setIpfsInitializing] = useState(false);
@@ -43,7 +43,7 @@ export default function WriteNodesDemo() {
 
   const [ownerKeyPair, setOwnerKeyPair] = useState<KeyPair | null>(null);
   const [services, setServices] = useState<ServiceDefinition[]>([]);
-  const [scopeIndexCid, setScopeIndexCid] = useState<string>('');
+  const [authorizedServicesCid, setAuthorizedServicesCid] = useState<string>('');
   const [lastAggregation, setLastAggregation] = useState<AggregationKeystone | null>(null);
   const [isAggregating, setIsAggregating] = useState(false);
 
@@ -84,32 +84,32 @@ export default function WriteNodesDemo() {
     };
   }, []);
 
-  const handleScopeIndexUpdate = async (updatedServices: ServiceDefinition[]) => {
+  const handleAuthorizedServicesUpdate = async (updatedServices: ServiceDefinition[]) => {
     setServices(updatedServices);
 
     if (!ownerKeyPair) return;
 
-    // Create Scope Index
-    let scopeIndex = scopeIndexManager.createScopeIndex('did:key:owner');
+    // Create Authorized Services registry
+    let authorizedServices = authorizedServicesManager.createAuthorizedServices('did:key:owner');
     
     for (const service of updatedServices) {
-      scopeIndex = scopeIndexManager.addService(scopeIndex, service);
+      authorizedServices = authorizedServicesManager.addService(authorizedServices, service);
     }
 
-    // Store Scope Index in IPFS
-    const tempKey = `scope-index-${Date.now()}`;
-    await ipfsStorage.set(tempKey, scopeIndex as any);
+    // Store Authorized Services in IPFS
+    const tempKey = `authorized-services-${Date.now()}`;
+    await ipfsStorage.set(tempKey, authorizedServices as any);
     const cid = ipfsStorage.getCID(tempKey);
     
     if (cid) {
-      setScopeIndexCid(cid);
-      toast.success(`Scope Index updated: ${cid.substring(0, 20)}...`);
+      setAuthorizedServicesCid(cid);
+      toast.success(`Authorized Services updated: ${cid.substring(0, 20)}...`);
     }
   };
 
   const handleAggregate = async () => {
-    if (!scopeIndexCid) {
-      toast.error('Create a Scope Index first by adding Write Nodes');
+    if (!authorizedServicesCid) {
+      toast.error('Create an Authorized Services registry first by adding Write Nodes');
       return;
     }
 
@@ -121,7 +121,7 @@ export default function WriteNodesDemo() {
     setIsAggregating(true);
 
     try {
-      const aggregator = new Aggregator(ipfsStorage, scopeIndexCid);
+      const aggregator = new Aggregator(ipfsStorage, authorizedServicesCid);
       aggregator.setResolutionTimeout(10000); // 10 seconds
 
       const { keystone, cid } = await aggregator.aggregate([
@@ -184,8 +184,8 @@ export default function WriteNodesDemo() {
 
               <TabsContent value="write-nodes" className="space-y-4">
                 <WriteNodePanel
-                  scopeIndexManager={scopeIndexManager}
-                  onScopeIndexUpdate={handleScopeIndexUpdate}
+                  authorizedServicesManager={authorizedServicesManager}
+                  onAuthorizedServicesUpdate={handleAuthorizedServicesUpdate}
                 />
               </TabsContent>
 
@@ -216,9 +216,9 @@ export default function WriteNodesDemo() {
                       <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                         <li>Root IPNS key never leaves owner's control</li>
                         <li>Each Write Node has its own IPNS keypair</li>
-                        <li>Owner's Scope Index lists authorized services</li>
+                        <li>Owner's Authorized Services registry lists authorized services</li>
                         <li>Aggregator only reads from authorized services</li>
-                        <li>Revocation = remove from Scope Index + rotate DEK</li>
+                        <li>Revocation = remove from Authorized Services + rotate DEK</li>
                       </ul>
                     </section>
 

@@ -47,8 +47,8 @@ export interface ServiceDefinition {
   policy: ServicePolicy;
 }
 
-export interface ScopeIndex {
-  type: 'egendata.scopeIndex';
+export interface AuthorizedServices {
+  type: 'egendata.authorizedServices';
   schema: string;
   owner: string;
   created: string;
@@ -75,7 +75,7 @@ export interface ServiceKeystone {
 }
 
 export interface AggregationInfo {
-  scopeIndexCid: string;
+  authorizedServicesCid: string;
   servicesIncluded: string[];
   missingServices: string[];
 }

@@ -109,11 +109,11 @@ export const AggregationPanel = ({ onAggregate, lastAggregation, isAggregating }
             </div>
           </Card>
 
-          {/* Scope Index CID */}
+          {/* Authorized Services CID */}
           <Card className="p-3 bg-muted/30">
-            <p className="text-xs font-medium mb-1">Scope Index CID</p>
+            <p className="text-xs font-medium mb-1">Authorized Services CID</p>
             <p className="text-xs font-mono break-all text-muted-foreground">
-              {lastAggregation.metadata.aggregation.scopeIndexCid}
+              {lastAggregation.metadata.aggregation.authorizedServicesCid}
             </p>
           </Card>
 
