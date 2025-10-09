@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import RFC from "./pages/RFC";
 import GetStarted from "./pages/GetStarted";
+import WriteNodesDemo from "./pages/WriteNodesDemo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/rfc" element={<RFC />} />
           <Route path="/get-started" element={<GetStarted />} />
+          <Route path="/write-nodes" element={<WriteNodesDemo />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

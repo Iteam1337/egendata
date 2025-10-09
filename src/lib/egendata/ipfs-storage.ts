@@ -1,7 +1,7 @@
 import { createHelia, Helia } from 'helia';
 import { json } from '@helia/json';
 import type { JSON as HeliaJSON } from '@helia/json';
-import { StorageAdapter, StoredData } from './types';
+import { StorageAdapter, StoredData, IPNSKey } from './types';
 import type { CID } from 'multiformats/cid';
 
 /**
@@ -12,6 +12,7 @@ export class IPFSStorage implements StorageAdapter {
   private node: Helia | null = null;
   private jsonStore: HeliaJSON | null = null;
   private cidMap: Map<string, CID> = new Map();
+  private ipnsKeys: Map<string, string> = new Map();
   private initialized = false;
 
   /**
@@ -198,5 +199,93 @@ export class IPFSStorage implements StorageAdapter {
       return;
     }
     await this.loadCIDMapping();
+  }
+
+  // IPNS Methods (Simplified for now - full implementation requires libp2p configuration)
+
+  /**
+   * Create a new IPNS key (mock implementation)
+   */
+  async createIPNSKey(keyName: string): Promise<IPNSKey> {
+    if (!this.initialized) {
+      throw new Error('IPFS not initialized');
+    }
+
+    // Generate a mock IPNS key ID
+    const mockId = `k51qzi5uqu5d${Math.random().toString(36).substring(2, 15)}`;
+    this.ipnsKeys.set(keyName, mockId);
+    
+    console.log(`✅ IPNS key created (mock): ${keyName}`);
+    
+    return {
+      name: keyName,
+      id: mockId
+    };
+  }
+
+  /**
+   * Publish CID to IPNS (mock implementation)
+   */
+  async publishToIPNS(cid: string | CID, keyName: string = 'self'): Promise<string> {
+    if (!this.initialized) {
+      throw new Error('IPFS not initialized');
+    }
+
+    const cidString = typeof cid === 'string' ? cid : cid.toString();
+    const ipnsId = this.ipnsKeys.get(keyName);
+    
+    if (!ipnsId) {
+      throw new Error(`IPNS key not found: ${keyName}. Create it first with createIPNSKey()`);
+    }
+    
+    console.log(`📡 Publishing to IPNS (${keyName}): ${cidString}`);
+    
+    // Store CID mapping for this IPNS key
+    localStorage.setItem(`ipns-${ipnsId}`, cidString);
+    
+    const ipnsName = `/ipns/${ipnsId}`;
+    console.log(`✅ Published to IPNS: ${ipnsName}`);
+    
+    return ipnsName;
+  }
+
+  /**
+   * Resolve IPNS name to CID (mock implementation)
+   */
+  async resolveIPNS(ipnsName: string): Promise<string> {
+    if (!this.initialized) {
+      throw new Error('IPFS not initialized');
+    }
+
+    // Remove /ipns/ prefix if present
+    const ipnsId = ipnsName.replace('/ipns/', '');
+    
+    console.log(`🔍 Resolving IPNS: ${ipnsId}...`);
+    
+    // Look up CID from localStorage
+    const cid = localStorage.getItem(`ipns-${ipnsId}`);
+    
+    if (!cid) {
+      throw new Error(`IPNS name not found: ${ipnsName}. Publish something first.`);
+    }
+    
+    console.log(`✅ Resolved IPNS to CID: ${cid}`);
+    return cid;
+  }
+
+  /**
+   * List all IPNS keys
+   */
+  async listIPNSKeys(): Promise<IPNSKey[]> {
+    const keys: IPNSKey[] = [];
+    
+    this.ipnsKeys.forEach((id, name) => {
+      keys.push({
+        name,
+        id
+      });
+    });
+    
+    return keys;
   }
 }

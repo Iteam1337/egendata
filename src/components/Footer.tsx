@@ -36,6 +36,13 @@ export const Footer = () => {
                 Get Started (npm)
               </Link>
               <Link 
+                to="/write-nodes" 
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Package className="w-4 h-4" />
+                Write Nodes Demo
+              </Link>
+              <Link 
                 to="/rfc" 
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
               >
