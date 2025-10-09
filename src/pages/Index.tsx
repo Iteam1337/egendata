@@ -792,15 +792,14 @@ const Index = () => {
           {/* Step 1: Share with Bob */}
           {step === 1 && (
             <div className="animate-fade-in space-y-8">
+              <StepIndicator steps={steps} currentStep={step} />
+              
               <Card className="p-6 bg-muted/30">
                 <h3 className="font-semibold text-lg mb-4">Step 1: Share with Bob</h3>
                 <p className="text-muted-foreground mb-4">
                   Alice has encrypted her data and stored it in IPFS. Now she wants to share access with Bob. The data
                   remains encrypted - only the access control changes.
                 </p>
-                <Button onClick={handleShareWithBob} disabled={!alice || !bob} className="mb-4">
-                  Grant Access to Bob <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
 
                 <DataEditor 
                   data={originalData} 
@@ -852,6 +851,12 @@ const Index = () => {
                 </div>
               </Card>
 
+              <div className="flex justify-end">
+                <Button onClick={handleShareWithBob} disabled={!alice || !bob}>
+                  Grant Access to Bob <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+
               {/* Concept explainers at bottom for mobile */}
               <div className="space-y-4 mt-8">
                 <ConceptExplainer title="The Keystone Pattern" icon={<Key className="w-4 h-4" />}>
@@ -898,15 +903,14 @@ const Index = () => {
           {/* Step 2: Share with Charlie */}
           {step === 2 && (
             <div className="animate-fade-in space-y-8">
+              <StepIndicator steps={steps} currentStep={step} />
+              
               <Card className="p-6 bg-muted/30">
                 <h3 className="font-semibold text-lg mb-4">Step 2: Share with Charlie</h3>
                 <p className="text-muted-foreground mb-4">
                   Alice can grant access to multiple recipients. Each gets their own wrapped copy of the DEK in the
                   keystone. The encrypted data itself remains unchanged on IPFS.
                 </p>
-                <Button onClick={handleShareWithCharlie} disabled={!alice || !charlie} className="mb-4">
-                  Grant Access to Charlie <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
 
                 <div className="space-y-4 mt-6">
                   <ActorCard name="Alice" role="Data Owner" status="active" align="left">
@@ -974,6 +978,12 @@ const Index = () => {
                   </ActorCard>
                 </div>
               </Card>
+
+              <div className="flex justify-end">
+                <Button onClick={handleShareWithCharlie} disabled={!alice || !charlie}>
+                  Grant Access to Charlie <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
 
               {/* Concept explainers at bottom for mobile */}
               <div className="space-y-4 mt-8">
@@ -1050,15 +1060,14 @@ const Index = () => {
           {/* Step 3: Revoke Bob */}
           {step === 3 && (
             <div className="animate-fade-in space-y-8">
+              <StepIndicator steps={steps} currentStep={step} />
+              
               <Card className="p-6 bg-muted/30">
                 <h3 className="font-semibold text-lg mb-4">Step 3: Revoke Bob's Access</h3>
                 <p className="text-muted-foreground mb-4">
                   Alice changes her mind about Bob. She can instantly revoke his access without any communication.
                   Charlie's access remains unaffected.
                 </p>
-                <Button onClick={handleRevokeBob} disabled={bobRevoked} variant="destructive" className="mb-4">
-                  <X className="w-4 h-4 mr-2" /> Revoke Bob's Access
-                </Button>
 
                 <div className="space-y-4 mt-6">
                   <ActorCard name="Alice" role="Data Owner" status="active" align="left">
@@ -1150,6 +1159,12 @@ const Index = () => {
                 </div>
               </Card>
 
+              <div className="flex justify-end">
+                <Button onClick={handleRevokeBob} disabled={bobRevoked} variant="destructive">
+                  <X className="w-4 h-4 mr-2" /> Revoke Bob's Access
+                </Button>
+              </div>
+
               {/* Concept explainers at bottom for mobile */}
               <div className="space-y-4 mt-8">
                 <ConceptExplainer title="Communication-less Revocation" icon={<LockOpen className="w-4 h-4" />}>
@@ -1227,6 +1242,8 @@ const Index = () => {
           {/* Step 4: Write Nodes */}
           {step === 4 && (
             <div className="animate-fade-in space-y-8">
+              <StepIndicator steps={steps} currentStep={step} />
+              
               <Card className="p-6 bg-muted/30">
                 <h3 className="font-semibold text-lg mb-4">Step 4: External Service Publishing</h3>
                 <p className="text-muted-foreground mb-6">
@@ -1355,6 +1372,8 @@ const Index = () => {
           {/* Step 5: Re-grant to Bob via manual key exchange */}
           {step === 5 && (
             <div className="animate-fade-in space-y-8">
+              <StepIndicator steps={steps} currentStep={step} />
+              
               <Card className="p-6 bg-muted/30">
                 <h3 className="font-semibold text-lg mb-4">Step 5: Re-grant Access Manually</h3>
                 <p className="text-muted-foreground mb-6">
