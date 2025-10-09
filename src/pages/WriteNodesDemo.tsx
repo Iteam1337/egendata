@@ -185,6 +185,8 @@ export default function WriteNodesDemo() {
               <TabsContent value="write-nodes" className="space-y-4">
                 <WriteNodePanel
                   authorizedServicesManager={authorizedServicesManager}
+                  ipfsStorage={ipfsStorage}
+                  ownerPublicKey={ownerKeyPair.publicKey}
                   onAuthorizedServicesUpdate={handleAuthorizedServicesUpdate}
                 />
               </TabsContent>
