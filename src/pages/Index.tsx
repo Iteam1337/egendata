@@ -91,6 +91,10 @@ const Index = () => {
   const [explorePanelOpen, setExplorePanelOpen] = useState(false);
   const [selectedActorForExplore, setSelectedActorForExplore] = useState<string | null>(null);
 
+  // Auto-refresh state for actor cards
+  const [readingActor, setReadingActor] = useState<string | null>(null);
+  const autoRefreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   // Write Node state
   const [writeNode, setWriteNode] = useState<WriteNode | null>(null);
   const [writeNodeRunning, setWriteNodeRunning] = useState(false);
@@ -419,8 +423,48 @@ const Index = () => {
       if (writeNodeIntervalRef.current) {
         clearInterval(writeNodeIntervalRef.current);
       }
+      if (autoRefreshIntervalRef.current) {
+        clearInterval(autoRefreshIntervalRef.current);
+      }
     };
   }, []);
+
+  // Auto-refresh actor data every second when in demo steps
+  useEffect(() => {
+    if (step === 0 || !alice) {
+      return;
+    }
+
+    const refreshActorData = async () => {
+      // Alice always tries to read
+      if (alice) {
+        await handleReadAsActor("Alice", alice.privateKey, true);
+      }
+
+      // Bob tries to read (will fail if revoked)
+      if (bob) {
+        await handleReadAsActor("Bob", bob.privateKey, true);
+      }
+
+      // Charlie tries to read after being added
+      if (charlie && step >= 2) {
+        await handleReadAsActor("Charlie", charlie.privateKey, true);
+      }
+    };
+
+    // Initial read
+    refreshActorData();
+
+    // Set up interval
+    const interval = setInterval(refreshActorData, 1000);
+    autoRefreshIntervalRef.current = interval;
+
+    return () => {
+      if (autoRefreshIntervalRef.current) {
+        clearInterval(autoRefreshIntervalRef.current);
+      }
+    };
+  }, [step, alice, bob, charlie, encryptedData, bobRevoked]);
 
   const handleGenerateBobQR = () => {
     if (!bob) return;
@@ -443,28 +487,36 @@ const Index = () => {
     });
   };
 
-  const handleReadAsActor = async (actorName: string, privateKey: CryptoKey) => {
+  const handleReadAsActor = async (actorName: string, privateKey: CryptoKey, silent = false) => {
     if (!encryptedData) return;
+
+    setReadingActor(actorName);
 
     try {
       const data = await egendata.readData(DATA_ID, actorName, privateKey);
       setDecryptedDataMap((prev) => new Map(prev).set(actorName, data));
 
-      toast({
-        title: `Data read as ${actorName}!`,
-        description: `${actorName} successfully decrypted the data`,
-      });
+      if (!silent) {
+        toast({
+          title: `Data read as ${actorName}!`,
+          description: `${actorName} successfully decrypted the data`,
+        });
+      }
     } catch (error) {
       setDecryptedDataMap((prev) => {
         const newMap = new Map(prev);
         newMap.delete(actorName);
         return newMap;
       });
-      toast({
-        title: "Access denied",
-        description: `${actorName} does not have access to the data`,
-        variant: "destructive",
-      });
+      if (!silent) {
+        toast({
+          title: "Access denied",
+          description: `${actorName} does not have access to the data`,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setTimeout(() => setReadingActor(null), 300);
     }
   };
 
@@ -811,7 +863,7 @@ const Index = () => {
                 />
 
                 <div className="space-y-4 mt-6">
-                  <ActorCard name="Alice" role="Data Owner" status="active" align="left">
+                  <ActorCard name="Alice" role="Data Owner" status="active" align="left" isReading={readingActor === "Alice"}>
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Who can read Alice's data:</p>
@@ -841,7 +893,7 @@ const Index = () => {
                       )}
                     </div>
                   </ActorCard>
-                  <ActorCard name="Bob" role="Recipient" status="default" align="right">
+                  <ActorCard name="Bob" role="Recipient" status="default" align="right" isReading={readingActor === "Bob"}>
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Can Bob read Alice's data?</p>
@@ -916,7 +968,7 @@ const Index = () => {
                 </p>
 
                 <div className="space-y-4 mt-6">
-                  <ActorCard name="Alice" role="Data Owner" status="active" align="left">
+                  <ActorCard name="Alice" role="Data Owner" status="active" align="left" isReading={readingActor === "Alice"}>
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Who can read Alice's data:</p>
@@ -941,7 +993,7 @@ const Index = () => {
                       )}
                     </div>
                   </ActorCard>
-                  <ActorCard name="Bob" role="Recipient" status="success" align="right">
+                  <ActorCard name="Bob" role="Recipient" status="success" align="right" isReading={readingActor === "Bob"}>
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Can Bob read Alice's data?</p>
@@ -969,7 +1021,7 @@ const Index = () => {
                       )}
                     </div>
                   </ActorCard>
-                  <ActorCard name="Charlie" role="Recipient" status="default" align="right">
+                  <ActorCard name="Charlie" role="Recipient" status="default" align="right" isReading={readingActor === "Charlie"}>
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Can Charlie read Alice's data?</p>
@@ -1073,7 +1125,7 @@ const Index = () => {
                 </p>
 
                 <div className="space-y-4 mt-6">
-                  <ActorCard name="Alice" role="Data Owner" status="active" align="left">
+                  <ActorCard name="Alice" role="Data Owner" status="active" align="left" isReading={readingActor === "Alice"}>
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Who can read Alice&apos;s data:</p>
@@ -1103,7 +1155,7 @@ const Index = () => {
                       )}
                     </div>
                   </ActorCard>
-                  <ActorCard name="Bob" role={bobRevoked ? "Revoked" : "Has Access"} status={bobRevoked ? "revoked" : "success"} align="right">
+                  <ActorCard name="Bob" role={bobRevoked ? "Revoked" : "Has Access"} status={bobRevoked ? "revoked" : "success"} align="right" isReading={readingActor === "Bob"}>
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Can Bob read Alice&apos;s data?</p>
@@ -1131,7 +1183,7 @@ const Index = () => {
                       )}
                     </div>
                   </ActorCard>
-                  <ActorCard name="Charlie" role="Has Access" status="success" align="right">
+                  <ActorCard name="Charlie" role="Has Access" status="success" align="right" isReading={readingActor === "Charlie"}>
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Can Charlie read Alice's data?</p>
@@ -1255,7 +1307,7 @@ const Index = () => {
                 </p>
 
                 <div className="space-y-4 mb-6">
-                  <ActorCard name="Alice" role="Data Owner" status="active" align="left">
+                  <ActorCard name="Alice" role="Data Owner" status="active" align="left" isReading={readingActor === "Alice"}>
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Who can read Alice&apos;s data:</p>
@@ -1293,7 +1345,7 @@ const Index = () => {
                       )}
                     </div>
                   </ActorCard>
-                  <ActorCard name="Bob" role={bobRevoked ? "Revoked" : "Has Access"} status={bobRevoked ? "revoked" : "success"} align="right">
+                  <ActorCard name="Bob" role={bobRevoked ? "Revoked" : "Has Access"} status={bobRevoked ? "revoked" : "success"} align="right" isReading={readingActor === "Bob"}>
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Can Bob read Alice&apos;s data?</p>
@@ -1321,7 +1373,7 @@ const Index = () => {
                       )}
                     </div>
                   </ActorCard>
-                  <ActorCard name="Charlie" role="Has Access" status="success" align="right">
+                  <ActorCard name="Charlie" role="Has Access" status="success" align="right" isReading={readingActor === "Charlie"}>
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Can Charlie read Alice's data?</p>
@@ -1519,7 +1571,7 @@ const Index = () => {
 
 
                 <div className="space-y-4 mt-6">
-                  <ActorCard name="Alice" role="Data Owner" status="active" align="left">
+                  <ActorCard name="Alice" role="Data Owner" status="active" align="left" isReading={readingActor === "Alice"}>
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Who can read Alice's data:</p>
@@ -1547,7 +1599,7 @@ const Index = () => {
                       )}
                     </div>
                   </ActorCard>
-                  <ActorCard name="Bob" role="Wants Access" status="default" align="right">
+                  <ActorCard name="Bob" role="Wants Access" status="default" align="right" isReading={readingActor === "Bob"}>
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Can Bob read Alice's data?</p>
@@ -1557,7 +1609,7 @@ const Index = () => {
                       </div>
                     </div>
                   </ActorCard>
-                  <ActorCard name="Charlie" role="Has Access" status="success" align="right">
+                  <ActorCard name="Charlie" role="Has Access" status="success" align="right" isReading={readingActor === "Charlie"}>
                     <div className="space-y-3 mt-4">
                       <div className="p-3 bg-muted/50 rounded-lg">
                         <p className="text-xs font-semibold mb-2">Can Charlie read Alice's data?</p>
@@ -1715,7 +1767,7 @@ const Index = () => {
 
               {/* Actor cards for continued experimentation */}
               <div className="space-y-4">
-                <ActorCard name="Alice" role="Data Owner" status="active" align="left">
+                <ActorCard name="Alice" role="Data Owner" status="active" align="left" isReading={readingActor === "Alice"}>
                   <div className="space-y-3 mt-4">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Keyring:</span>
@@ -1742,7 +1794,7 @@ const Index = () => {
                   </div>
                 </ActorCard>
 
-                <ActorCard name="Bob" role="Recipient" status={bobRevoked ? "revoked" : "success"} align="right">
+                <ActorCard name="Bob" role="Recipient" status={bobRevoked ? "revoked" : "success"} align="right" isReading={readingActor === "Bob"}>
                   <div className="space-y-3 mt-4">
                     {bob && (
                       <Button
@@ -1765,7 +1817,7 @@ const Index = () => {
                   </div>
                 </ActorCard>
 
-                <ActorCard name="Charlie" role="Recipient" status={charlieRevoked ? "revoked" : "success"} align="right">
+                <ActorCard name="Charlie" role="Recipient" status={charlieRevoked ? "revoked" : "success"} align="right" isReading={readingActor === "Charlie"}>
                   <div className="space-y-3 mt-4">
                     {charlie && (
                       <Button
