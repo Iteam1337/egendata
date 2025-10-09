@@ -1,9 +1,14 @@
-import { ScopeIndex, ServiceDefinition } from './types';
+import { ScopeIndex, ServiceDefinition, StorageAdapter } from './types';
 
 /**
  * Manages Scope Index - lists authorized Write Nodes
  */
 export class ScopeIndexManager {
+  private storage?: StorageAdapter;
+
+  constructor(storage?: StorageAdapter) {
+    this.storage = storage;
+  }
   /**
    * Create a new Scope Index
    */
@@ -72,6 +77,57 @@ export class ScopeIndexManager {
     const ids = scopeIndex.services.map(s => s.id);
     if (new Set(ids).size !== ids.length) return false;
 
+    // Validate service definitions
+    for (const service of scopeIndex.services) {
+      if (!service.id || !service.serviceIpns || !Array.isArray(service.scopes)) {
+        return false;
+      }
+      if (!service.policy || !['by-id', 'append', 'replace'].includes(service.policy.merge)) {
+        return false;
+      }
+    }
+
     return true;
+  }
+
+  /**
+   * Publish Scope Index to storage and return CID
+   */
+  async publishScopeIndex(scopeIndex: ScopeIndex): Promise<string> {
+    if (!this.storage) {
+      throw new Error('Storage adapter not configured');
+    }
+
+    if (!this.validate(scopeIndex)) {
+      throw new Error('Invalid Scope Index structure');
+    }
+
+    const key = `scope-index-${scopeIndex.owner}-${scopeIndex.version}`;
+    
+    // Store as a pseudo-StoredData structure (Scope Index is public metadata)
+    await this.storage.set(key, {
+      encryptedData: JSON.stringify(scopeIndex),
+      keystone: {
+        encryptedKey: '',
+        recipients: []
+      },
+      metadata: {
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        owner: scopeIndex.owner
+      }
+    });
+
+    // Return CID if storage adapter supports it
+    if ('getCID' in this.storage && typeof this.storage.getCID === 'function') {
+      const cid = this.storage.getCID(key);
+      if (!cid) {
+        throw new Error('Failed to get CID from storage');
+      }
+      return cid;
+    }
+
+    // Fallback: return the key as identifier
+    return key;
   }
 }
