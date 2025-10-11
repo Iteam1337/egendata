@@ -32,14 +32,24 @@ export default function NodeVisualization() {
   const [actorKeys, setActorKeys] = useState<Record<string, { publicKey: CryptoKey; privateKey: CryptoKey; publicKeyJWK: any }>>({});
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [ipfsId, setIpfsId] = useState<string>('');
+  const [ipfsReady, setIpfsReady] = useState(false);
 
   useEffect(() => {
     const initIPFS = async () => {
       try {
+        // Initialize IPFS storage
+        if (client.storage instanceof IPFSStorage) {
+          await client.storage.initialize();
+          await client.storage.restore();
+          console.log('✅ IPFS Storage initialized');
+        }
+        
         const peerId = await client.getIPFSId();
         setIpfsId(peerId);
+        setIpfsReady(true);
       } catch (error) {
-        console.error('Failed to get IPFS ID:', error);
+        console.error('Failed to initialize IPFS:', error);
+        toast.error('Failed to initialize IPFS');
       }
     };
     initIPFS();
@@ -294,13 +304,13 @@ export default function NodeVisualization() {
           </p>
           
           <div className="flex gap-2">
-            <Button onClick={() => createActor('Alice', { x: 100, y: 250 })}>
+            <Button onClick={() => createActor('Alice', { x: 100, y: 250 })} disabled={!ipfsReady}>
               Create Alice
             </Button>
-            <Button onClick={() => createActor('Bob', { x: 400, y: 150 })}>
+            <Button onClick={() => createActor('Bob', { x: 400, y: 150 })} disabled={!ipfsReady}>
               Create Bob
             </Button>
-            <Button onClick={() => createActor('Charlie', { x: 400, y: 350 })}>
+            <Button onClick={() => createActor('Charlie', { x: 400, y: 350 })} disabled={!ipfsReady}>
               Create Charlie
             </Button>
           </div>
@@ -309,21 +319,21 @@ export default function NodeVisualization() {
             <Button 
               variant="secondary"
               onClick={() => writeDataToNode('Alice', { message: 'Hello from Alice', timestamp: Date.now() })}
-              disabled={!actorKeys.Alice}
+              disabled={!ipfsReady || !actorKeys.Alice}
             >
               Alice Write Data
             </Button>
             <Button 
               variant="secondary"
               onClick={() => grantAccess('Alice', 'Bob')}
-              disabled={!actorKeys.Alice || !actorKeys.Bob}
+              disabled={!ipfsReady || !actorKeys.Alice || !actorKeys.Bob}
             >
               Grant Alice → Bob
             </Button>
             <Button 
               variant="secondary"
               onClick={() => grantAccess('Alice', 'Charlie')}
-              disabled={!actorKeys.Alice || !actorKeys.Charlie}
+              disabled={!ipfsReady || !actorKeys.Alice || !actorKeys.Charlie}
             >
               Grant Alice → Charlie
             </Button>
