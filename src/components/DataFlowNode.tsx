@@ -27,6 +27,7 @@ export interface DataFlowNodeData {
   expanded: boolean;
   onToggleExpand: () => void;
   decryptedData: any | null;
+  encryptedData: string | null;
   publicKeyJWK: any | null;
   keyring: Array<{ name: string }>;
   metadata: {
@@ -251,11 +252,28 @@ export const DataFlowNode = memo(({ data }: NodeProps<DataFlowNodeData>) => {
                   <>
                     <Separator />
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold">📦 Data (Klartext)</p>
-                      <pre className="bg-muted p-2 rounded text-xs overflow-auto">
+                      <p className="text-xs font-semibold">📖 Dekrypterad Data (Klartext)</p>
+                      <pre className="bg-muted p-2 rounded text-xs overflow-auto max-h-[150px]">
                         {JSON.stringify(data.decryptedData, null, 2)}
                       </pre>
                     </div>
+                  </>
+                )}
+
+                {data.encryptedData && (
+                  <>
+                    <Separator />
+                    <Collapsible>
+                      <CollapsibleTrigger className="flex items-center gap-2 text-xs font-semibold hover:underline">
+                        <ChevronDown className="h-3 w-3" />
+                        🔒 Krypterad Data (IPFS)
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <pre className="bg-muted p-2 rounded text-xs overflow-auto mt-2 max-h-[150px]">
+                          {data.encryptedData.substring(0, 500)}...
+                        </pre>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </>
                 )}
 

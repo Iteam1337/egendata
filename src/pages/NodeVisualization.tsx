@@ -97,6 +97,7 @@ export default function NodeVisualization() {
           expanded: false,
           onToggleExpand: () => toggleNodeExpanded(name),
           decryptedData: null,
+          encryptedData: null,
           publicKeyJWK: keyPair.publicKeyJWK,
           keyring: [],
           metadata: {},
@@ -119,16 +120,73 @@ export default function NodeVisualization() {
     if (!keyPair) return;
 
     try {
+      // Try to read own data first
       const metadata = await client.getMetadata(`${nodeName}-data`);
-      if (!metadata) return;
+      let decryptedData = null;
+      let encryptedData = null;
+      let ipnsCid = null;
+      let ipfsCid = null;
+      let recipients: string[] = [];
 
-      const decryptedData = await client.readData(
-        `${nodeName}-data`,
-        nodeName,
-        keyPair.privateKey
-      );
+      if (metadata) {
+        try {
+          decryptedData = await client.readData(
+            `${nodeName}-data`,
+            nodeName,
+            keyPair.privateKey
+          );
+          recipients = await client.listRecipients(`${nodeName}-data`);
+          ipnsCid = metadata.ipnsName || null;
+          ipfsCid = (client.storage instanceof IPFSStorage) 
+            ? client.storage.getCID(`${nodeName}-data`) 
+            : null;
 
-      const recipients = await client.listRecipients(`${nodeName}-data`);
+          // Get encrypted data for display
+          const storedData = await client.storage.get(`${nodeName}-data`);
+          if (storedData) {
+            encryptedData = storedData.encryptedData;
+          }
+        } catch (error) {
+          console.log(`Could not read own data for ${nodeName}:`, error);
+        }
+      }
+
+      // Check if this node is listening to another node's data
+      const currentNode = nodes.find(n => n.id === nodeName);
+      if (currentNode?.data.listeningTo) {
+        // Find the source node
+        const sourceNode = nodes.find(n => n.data.ipnsCid === currentNode.data.listeningTo);
+        if (sourceNode) {
+          try {
+            const sourceData = await client.readData(
+              `${sourceNode.id}-data`,
+              nodeName,
+              keyPair.privateKey
+            );
+            
+            // If we can read the source data, use it
+            if (sourceData && !decryptedData) {
+              decryptedData = sourceData;
+              
+              // Get source metadata and encrypted data
+              const sourceMetadata = await client.getMetadata(`${sourceNode.id}-data`);
+              if (sourceMetadata) {
+                ipnsCid = sourceMetadata.ipnsName || currentNode.data.listeningTo;
+                ipfsCid = (client.storage instanceof IPFSStorage) 
+                  ? client.storage.getCID(`${sourceNode.id}-data`) 
+                  : null;
+                
+                const storedSourceData = await client.storage.get(`${sourceNode.id}-data`);
+                if (storedSourceData) {
+                  encryptedData = storedSourceData.encryptedData;
+                }
+              }
+            }
+          } catch (error) {
+            console.log(`Node ${nodeName} couldn't read data from source:`, error);
+          }
+        }
+      }
 
       setNodes((nds) =>
         nds.map((node) =>
@@ -138,16 +196,15 @@ export default function NodeVisualization() {
                 data: {
                   ...node.data,
                   decryptedData,
-                  ipnsCid: metadata.ipnsName || null,
-                  ipfsCid: (client.storage instanceof IPFSStorage) 
-                    ? client.storage.getCID(`${nodeName}-data`) 
-                    : null,
-                  metadata: {
+                  encryptedData,
+                  ipnsCid,
+                  ipfsCid,
+                  metadata: metadata ? {
                     createdAt: metadata.createdAt,
                     updatedAt: metadata.updatedAt,
                     version: metadata.ipnsVersion,
                     ipnsName: metadata.ipnsName,
-                  },
+                  } : {},
                   keyring: recipients.map(name => ({ name })),
                   publicKeyJWK: keyPair.publicKeyJWK,
                 },
@@ -156,7 +213,7 @@ export default function NodeVisualization() {
         )
       );
     } catch (error) {
-      console.log(`Node ${nodeName} couldn't read data:`, error);
+      console.log(`Node ${nodeName} refresh error:`, error);
     }
   };
 
@@ -349,6 +406,7 @@ export default function NodeVisualization() {
                 expanded: expandedNodes.has(node.id),
                 onToggleExpand: () => toggleNodeExpanded(node.id),
                 ipfsId,
+                encryptedData: node.data.encryptedData || null,
                 onCopyKey: () => handleCopyKey(node.id),
                 onPasteKey: (pastedKeyJWK: string) => handlePasteKey(node.id, pastedKeyJWK),
               }
