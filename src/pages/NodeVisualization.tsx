@@ -23,7 +23,10 @@ const nodeTypes = {
 };
 
 export default function NodeVisualization() {
-  const [client] = useState(() => new EgendataClient());
+  const [client] = useState(() => {
+    const storage = new IPFSStorage();
+    return new EgendataClient(storage);
+  });
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [actorKeys, setActorKeys] = useState<Record<string, { publicKey: CryptoKey; privateKey: CryptoKey; publicKeyJWK: any }>>({});
